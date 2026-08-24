@@ -5,51 +5,55 @@ on:
     branches: [ main, master ]
   workflow_dispatch:
 
+permissions:
+  contents: write
+
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Setup Node.js
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
-          node-version: 18
+          node-version: 20
 
       - name: Setup Java JDK
-        uses: actions/setup-java@v3
+        uses: actions/setup-java@v4
         with:
           distribution: 'zulu'
           java-version: '17'
 
-      - name: Install Dependencies & Capacitor
+      - name: Install Capacitor & Configure
         run: |
           npm init -y
-          npm install @capacitor/core @capacitor/cli @capacitor/android
+          npm install @capacitor/core@latest @capacitor/cli@latest @capacitor/android@latest
           npx cap init SynthBudget com.synthlabs.synthbudget --web-dir www
           npx cap add android
           npx cap sync
 
-      - name: Update Version Code in Gradle
+      - name: Update Version Code
         run: |
-          sed -i 's/versionCode 1/versionCode 10001/g' android/app/build.gradle
+          if [ -f android/app/build.gradle ]; then
+            sed -i 's/versionCode 1/versionCode 10001/g' android/app/build.gradle
+          fi
 
-      - name: Build Unsigned AAB & APK
+      - name: Build Android Bundle & APK
         run: |
           cd android
           chmod +x gradlew
-          ./gradlew bundleRelease assembleRelease
+          ./gradlew bundleRelease assembleRelease --stacktrace
 
-      - name: Upload .AAB Bundle (For Google Play)
-        uses: actions/upload-artifact@v3
+      - name: Upload .AAB (For Google Play Console)
+        uses: actions/upload-artifact@v4
         with:
           name: SynthBudget-Release-AAB
-          path: android/app/build/outputs/bundle/release/app-release.aab
+          path: android/app/build/outputs/bundle/release/*.aab
 
-      - name: Upload .APK File (For Phone Testing)
-        uses: actions/upload-artifact@v3
+      - name: Upload .APK (For Phone Testing)
+        uses: actions/upload-artifact@v4
         with:
           name: SynthBudget-Release-APK
-          path: android/app/build/outputs/apk/release/app-release-unsigned.apk
-
+          path: android/app/build/outputs/apk/release/*.apk
