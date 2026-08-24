@@ -12,13 +12,8 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout Code
+      - name: Checkout Repository
         uses: actions/checkout@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: 20
 
       - name: Setup Java JDK
         uses: actions/setup-java@v4
@@ -26,13 +21,28 @@ jobs:
           distribution: 'zulu'
           java-version: '17'
 
-      - name: Install Capacitor & Configure
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Prepare Web Assets & Capacitor Config
         run: |
           npm init -y
           npm install @capacitor/core@latest @capacitor/cli@latest @capacitor/android@latest
-          npx cap init SynthBudget com.synthlabs.synthbudget --web-dir www
+          cat <<EOF > capacitor.config.json
+          {
+            "appId": "com.synthlabs.synthbudget",
+            "appName": "SynthBudget",
+            "webDir": "www",
+            "bundledWebRuntime": false
+          }
+          EOF
           npx cap add android
-          npx cap sync
+          npx cap sync android
 
       - name: Update Version Code
         run: |
@@ -44,7 +54,7 @@ jobs:
         run: |
           cd android
           chmod +x gradlew
-          ./gradlew bundleRelease assembleRelease --stacktrace
+          ./gradlew assembleRelease bundleRelease --no-daemon
 
       - name: Upload .AAB (For Google Play Console)
         uses: actions/upload-artifact@v4
