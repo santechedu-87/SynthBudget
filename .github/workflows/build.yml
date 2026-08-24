@@ -38,11 +38,11 @@ jobs:
         run: |
           sed -i 's/versionCode 1/versionCode 10001/g' android/app/build.gradle
 
-      - name: Build Release AAB & APK
+      - name: Build Release AAB & Debug APK
         run: |
           cd android
           chmod +x gradlew
-          ./gradlew bundleRelease assembleRelease --no-daemon
+          ./gradlew bundleRelease assembleDebug --no-daemon
 
       - name: Sign App Bundle (AAB)
         run: |
@@ -58,5 +58,5 @@ jobs:
       - name: Upload .APK (For Phone Testing)
         uses: actions/upload-artifact@v4
         with:
-          name: SynthBudget-Release-APK
-          path: android/app/build/outputs/apk/release/*.apk
+          name: SynthBudget-Test-APK
+          path: android/app/build/outputs/apk/debug/*.apk
