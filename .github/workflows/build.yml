@@ -15,55 +15,43 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v4
 
-      - name: Setup Java JDK
+      - name: Setup Java JDK 17
         uses: actions/setup-java@v4
         with:
           distribution: 'zulu'
           java-version: '17'
 
-      - name: Setup Node.js
+      - name: Setup Node.js 20
         uses: actions/setup-node@v4
         with:
           node-version: 20
 
-      - name: Setup Android SDK
-        uses: android-actions/setup-android@v3
-
-      - name: Prepare Web Assets & Capacitor Config
+      - name: Install Capacitor & Generate Android Project
         run: |
           npm init -y
           npm install @capacitor/core@latest @capacitor/cli@latest @capacitor/android@latest
-          cat <<EOF > capacitor.config.json
-          {
-            "appId": "com.synthlabs.synthbudget",
-            "appName": "SynthBudget",
-            "webDir": "www",
-            "bundledWebRuntime": false
-          }
-          EOF
+          echo '{"appId":"com.synthlabs.synthbudget","appName":"SynthBudget","webDir":"www"}' > capacitor.config.json
           npx cap add android
           npx cap sync android
 
       - name: Update Version Code
         run: |
-          if [ -f android/app/build.gradle ]; then
-            sed -i 's/versionCode 1/versionCode 10001/g' android/app/build.gradle
-          fi
+          sed -i 's/versionCode 1/versionCode 10001/g' android/app/build.gradle
 
-      - name: Build Android Bundle & APK
+      - name: Build Android AAB and APK
         run: |
           cd android
           chmod +x gradlew
-          ./gradlew assembleRelease bundleRelease --no-daemon
+          ./gradlew bundleDebug assembleDebug --no-daemon
 
       - name: Upload .AAB (For Google Play Console)
         uses: actions/upload-artifact@v4
         with:
-          name: SynthBudget-Release-AAB
-          path: android/app/build/outputs/bundle/release/*.aab
+          name: SynthBudget-AAB
+          path: android/app/build/outputs/bundle/debug/*.aab
 
-      - name: Upload .APK (For Phone Testing)
+      - name: Upload .APK (For Direct Phone Testing)
         uses: actions/upload-artifact@v4
         with:
-          name: SynthBudget-Release-APK
-          path: android/app/build/outputs/apk/release/*.apk
+          name: SynthBudget-APK
+          path: android/app/build/outputs/apk/debug/*.apk
