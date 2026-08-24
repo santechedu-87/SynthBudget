@@ -26,17 +26,19 @@ jobs:
         with:
           node-version: 20
 
-      - name: Install Capacitor & Generate Android Project
+      - name: Install Capacitor & Generate Project
         run: |
           npm init -y
-          npm install @capacitor/core@latest @capacitor/cli@latest @capacitor/android@latest
-          echo '{"appId":"com.synthlabs.synthbudget","appName":"SynthBudget","webDir":"www"}' > capacitor.config.json
+          npm install @capacitor/core@6 @capacitor/cli@6 @capacitor/android@6
+          npx cap init SynthBudget com.synthlabs.synthbudget --web-dir www
           npx cap add android
           npx cap sync android
 
       - name: Update Version Code
         run: |
-          sed -i 's/versionCode 1/versionCode 10001/g' android/app/build.gradle
+          if [ -f android/app/build.gradle ]; then
+            sed -i 's/versionCode 1/versionCode 10001/g' android/app/build.gradle
+          fi
 
       - name: Build Android AAB and APK
         run: |
@@ -47,11 +49,11 @@ jobs:
       - name: Upload .AAB (For Google Play Console)
         uses: actions/upload-artifact@v4
         with:
-          name: SynthBudget-AAB
+          name: SynthBudget-Release-AAB
           path: android/app/build/outputs/bundle/debug/*.aab
 
-      - name: Upload .APK (For Direct Phone Testing)
+      - name: Upload .APK (For Phone Testing)
         uses: actions/upload-artifact@v4
         with:
-          name: SynthBudget-APK
+          name: SynthBudget-Release-APK
           path: android/app/build/outputs/apk/debug/*.apk
