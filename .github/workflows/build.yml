@@ -30,30 +30,33 @@ jobs:
         run: |
           npm init -y
           npm install @capacitor/core@6 @capacitor/cli@6 @capacitor/android@6
-          npx cap init SynthBudget com.synthlabs.synthbudget --web-dir www
+          echo '{"appId":"com.synthlabs.synthbudget","appName":"SynthBudget","webDir":"www"}' > capacitor.config.json
           npx cap add android
           npx cap sync android
 
       - name: Update Version Code
         run: |
-          if [ -f android/app/build.gradle ]; then
-            sed -i 's/versionCode 1/versionCode 10001/g' android/app/build.gradle
-          fi
+          sed -i 's/versionCode 1/versionCode 10001/g' android/app/build.gradle
 
-      - name: Build Android AAB and APK
+      - name: Build Release AAB & APK
         run: |
           cd android
           chmod +x gradlew
-          ./gradlew bundleDebug assembleDebug --no-daemon
+          ./gradlew bundleRelease assembleRelease --no-daemon
 
-      - name: Upload .AAB (For Google Play Console)
+      - name: Sign App Bundle (AAB)
+        run: |
+          keytool -genkeypair -v -keystore release.jks -alias releaseKey -keyalg RSA -keysize 2048 -validity 10000 -storepass synthbudget123 -keypass synthbudget123 -dname "CN=SynthBudget, OU=Mobile, O=SynthLabs, C=IN"
+          jarsigner -keystore release.jks -storepass synthbudget123 -keypass synthbudget123 android/app/build/outputs/bundle/release/app-release.aab releaseKey
+
+      - name: Upload Signed .AAB (For Google Play Console)
         uses: actions/upload-artifact@v4
         with:
-          name: SynthBudget-Release-AAB
-          path: android/app/build/outputs/bundle/debug/*.aab
+          name: SynthBudget-Signed-AAB
+          path: android/app/build/outputs/bundle/release/*.aab
 
       - name: Upload .APK (For Phone Testing)
         uses: actions/upload-artifact@v4
         with:
           name: SynthBudget-Release-APK
-          path: android/app/build/outputs/apk/debug/*.apk
+          path: android/app/build/outputs/apk/release/*.apk
