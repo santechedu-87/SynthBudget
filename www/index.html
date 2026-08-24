@@ -1,0 +1,769 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>SynthBudget - Personal Finance Tracker</title>
+  
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            synth: {
+              bg: '#0B0F17',
+              card: '#151C28',
+              border: '#232D3F',
+              accent: '#8B5CF6',
+              cyan: '#06B6D4',
+              pink: '#EC4899',
+              green: '#10B981',
+              yellow: '#F59E0B'
+            }
+          },
+          fontFamily: {
+            sans: ['Plus Jakarta Sans', 'sans-serif'],
+          }
+        }
+      }
+    }
+  </script>
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  
+  <!-- FontAwesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+  <style>
+    body {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      background-color: #0B0F17;
+      color: #F3F4F6;
+      -webkit-tap-highlight-color: transparent;
+      user-select: none;
+    }
+    input, button {
+      user-select: auto;
+    }
+    .custom-scrollbar::-webkit-scrollbar {
+      width: 4px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb {
+      background: #232D3F;
+      border-radius: 4px;
+    }
+    .glass-card {
+      background: rgba(21, 28, 40, 0.85);
+      backdrop-filter: blur(12px);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+    .glow-cyan {
+      box-shadow: 0 0 15px rgba(6, 182, 212, 0.25);
+    }
+    .glow-accent {
+      box-shadow: 0 0 20px rgba(139, 92, 246, 0.3);
+    }
+  </style>
+</head>
+<body class="min-h-screen pb-24 text-slate-100 flex justify-center bg-[#0B0F17]">
+
+  <div class="w-full max-w-md min-h-screen flex flex-col relative bg-[#0B0F17] shadow-2xl border-x border-slate-800/50">
+    
+    <!-- Top Header Bar -->
+    <header class="sticky top-0 z-20 px-5 pt-5 pb-3 bg-[#0B0F17]/90 backdrop-blur-md border-b border-slate-800/80 flex items-center justify-between">
+      <div>
+        <h1 class="text-xl font-extrabold tracking-tight bg-gradient-to-r from-purple-400 via-cyan-400 to-pink-400 bg-clip-text text-transparent">
+          SynthBudget
+        </h1>
+        <p class="text-xs text-slate-400 font-medium" id="current-date-display">Loading date...</p>
+      </div>
+
+      <div class="flex items-center gap-2">
+        <button onclick="exportData()" title="Backup Data" class="p-2.5 rounded-xl bg-slate-800/80 hover:bg-slate-700 text-slate-300 transition-all border border-slate-700/50 text-xs flex items-center gap-1.5 active:scale-90">
+          <i class="fa-solid fa-download"></i>
+        </button>
+        <button onclick="document.getElementById('import-file').click()" title="Restore Data" class="p-2.5 rounded-xl bg-slate-800/80 hover:bg-slate-700 text-slate-300 transition-all border border-slate-700/50 text-xs flex items-center gap-1.5 active:scale-90">
+          <i class="fa-solid fa-upload"></i>
+        </button>
+        <input type="file" id="import-file" class="hidden" accept=".json" onchange="importData(event)">
+      </div>
+    </header>
+
+    <!-- Main Content Area -->
+    <main class="flex-1 px-4 py-4 space-y-5 overflow-y-auto custom-scrollbar">
+
+      <!-- Tab 1: Overview Dashboard -->
+      <section id="tab-overview" class="space-y-5">
+        
+        <!-- Summary Cards Carousel -->
+        <div class="grid grid-cols-3 gap-2.5">
+          <div class="glass-card p-3 rounded-2xl border border-slate-800 flex flex-col items-center text-center">
+            <div class="w-8 h-8 rounded-xl bg-purple-500/10 text-purple-400 flex items-center justify-center mb-1 text-sm">
+              <i class="fa-solid fa-credit-card"></i>
+            </div>
+            <span class="text-[10px] text-slate-400 font-medium">Subscriptions</span>
+            <span class="text-xs font-bold text-slate-100 mt-0.5" id="summary-subscriptions">$0.00</span>
+          </div>
+
+          <div class="glass-card p-3 rounded-2xl border border-slate-800 flex flex-col items-center text-center">
+            <div class="w-8 h-8 rounded-xl bg-emerald-500/10 text-emerald-400 flex items-center justify-center mb-1 text-sm">
+              <i class="fa-solid fa-piggy-bank"></i>
+            </div>
+            <span class="text-[10px] text-slate-400 font-medium">Saved</span>
+            <span class="text-xs font-bold text-emerald-400 mt-0.5" id="summary-saved">$0.00</span>
+          </div>
+
+          <div class="glass-card p-3 rounded-2xl border border-slate-800 flex flex-col items-center text-center">
+            <div class="w-8 h-8 rounded-xl bg-amber-500/10 text-amber-400 flex items-center justify-center mb-1 text-sm">
+              <i class="fa-solid fa-receipt"></i>
+            </div>
+            <span class="text-[10px] text-slate-400 font-medium">Spent</span>
+            <span class="text-xs font-bold text-amber-400 mt-0.5" id="summary-spent">$0.00</span>
+          </div>
+        </div>
+
+        <!-- Monthly Budget Cap Progress -->
+        <div class="glass-card p-4 rounded-2xl border border-slate-800/80 space-y-2">
+          <div class="flex justify-between items-center text-xs">
+            <span class="font-semibold text-slate-300">Monthly Spending</span>
+            <span class="font-bold text-cyan-400" id="budget-ratio-text">$0.00 / $1,750.00</span>
+          </div>
+          <div class="w-full h-2.5 bg-slate-800 rounded-full overflow-hidden p-0.5">
+            <div id="budget-progress-bar" class="h-full bg-gradient-to-r from-cyan-400 to-purple-500 rounded-full transition-all duration-500" style="width: 0%"></div>
+          </div>
+        </div>
+
+        <!-- Main Action Buttons -->
+        <div class="grid grid-cols-2 gap-3">
+          <button onclick="openModal('modal-expense')" class="py-3 px-4 rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-bold text-xs shadow-lg glow-accent flex items-center justify-center gap-2 transition-all active:scale-95">
+            <i class="fa-solid fa-plus"></i> Add Expense
+          </button>
+          <button onclick="openModal('modal-subscription')" class="py-3 px-4 rounded-xl bg-slate-800 hover:bg-slate-700 text-cyan-400 font-bold text-xs border border-cyan-500/30 flex items-center justify-center gap-2 transition-all active:scale-95">
+            <i class="fa-solid fa-calendar-plus"></i> Add Subscription
+          </button>
+        </div>
+
+        <!-- Dashboard Subscriptions -->
+        <div class="space-y-3">
+          <div class="flex items-center justify-between">
+            <h3 class="text-sm font-bold text-slate-200">Monthly Subscriptions</h3>
+            <span class="text-xs font-bold text-indigo-400" id="subs-total-badge">$0.00/mo</span>
+          </div>
+          <div id="subscriptions-list" class="space-y-2">
+            <!-- Dynamically populated -->
+          </div>
+        </div>
+
+        <!-- Dashboard Savings Goals -->
+        <div class="space-y-3">
+          <div class="flex items-center justify-between">
+            <h3 class="text-sm font-bold text-slate-200">Savings Goals</h3>
+            <button onclick="openModal('modal-goal')" class="text-xs text-emerald-400 hover:underline font-semibold">+ New Goal</button>
+          </div>
+          <div id="savings-goals-list" class="space-y-2.5">
+            <!-- Dynamically populated -->
+          </div>
+        </div>
+
+        <!-- Dashboard Recent Transactions -->
+        <div class="space-y-3">
+          <div class="flex items-center justify-between">
+            <h3 class="text-sm font-bold text-slate-200">Recent Transactions</h3>
+            <span class="text-xs text-slate-400">Latest activity</span>
+          </div>
+          <div id="transactions-list" class="space-y-2">
+            <!-- Dynamically populated -->
+          </div>
+        </div>
+      </section>
+
+      <!-- Tab 2: Full Subscriptions View -->
+      <section id="tab-subscriptions" class="space-y-4 hidden">
+        <div class="flex justify-between items-center">
+          <h2 class="text-base font-bold text-slate-100">Recurring Subscriptions</h2>
+          <button onclick="openModal('modal-subscription')" class="px-3 py-1.5 rounded-lg bg-purple-600 hover:bg-purple-500 text-white text-xs font-bold transition active:scale-95">
+            + Add New
+          </button>
+        </div>
+        <div id="subscriptions-full-list" class="space-y-2.5">
+          <!-- Dynamically populated -->
+        </div>
+      </section>
+
+      <!-- Tab 3: Full Savings View -->
+      <section id="tab-savings" class="space-y-4 hidden">
+        <div class="flex justify-between items-center">
+          <h2 class="text-base font-bold text-slate-100">Savings & Funds</h2>
+          <button onclick="openModal('modal-goal')" class="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold transition active:scale-95">
+            + New Goal
+          </button>
+        </div>
+        <div id="savings-full-list" class="space-y-3">
+          <!-- Dynamically populated -->
+        </div>
+      </section>
+
+      <!-- Tab 4: Spending Breakdown View -->
+      <section id="tab-spending" class="space-y-4 hidden">
+        <h2 class="text-base font-bold text-slate-100">Category Breakdown</h2>
+        <div id="categories-breakdown-list" class="space-y-3">
+          <!-- Dynamically populated -->
+        </div>
+      </section>
+
+    </main>
+
+    <!-- Bottom Mobile Navigation Bar -->
+    <nav class="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-md bg-[#0B0F17]/95 backdrop-blur-lg border-t border-slate-800/80 px-4 py-2 flex justify-around items-center z-30 shadow-2xl">
+      <button onclick="switchTab('overview')" id="nav-overview" class="flex flex-col items-center gap-1 text-purple-400 transition-colors py-1 px-3">
+        <i class="fa-solid fa-house text-lg"></i>
+        <span class="text-[10px] font-medium">Overview</span>
+      </button>
+
+      <button onclick="switchTab('subscriptions')" id="nav-subscriptions" class="flex flex-col items-center gap-1 text-slate-500 hover:text-slate-300 transition-colors py-1 px-3">
+        <i class="fa-solid fa-repeat text-lg"></i>
+        <span class="text-[10px] font-medium">Subscriptions</span>
+      </button>
+
+      <button onclick="switchTab('savings')" id="nav-savings" class="flex flex-col items-center gap-1 text-slate-500 hover:text-slate-300 transition-colors py-1 px-3">
+        <i class="fa-solid fa-wallet text-lg"></i>
+        <span class="text-[10px] font-medium">Savings</span>
+      </button>
+
+      <button onclick="switchTab('spending')" id="nav-spending" class="flex flex-col items-center gap-1 text-slate-500 hover:text-slate-300 transition-colors py-1 px-3">
+        <i class="fa-solid fa-chart-pie text-lg"></i>
+        <span class="text-[10px] font-medium">Spending</span>
+      </button>
+    </nav>
+
+    <!-- Toast Notification Banner -->
+    <div id="toast" class="fixed top-5 left-1/2 -translate-x-1/2 z-50 pointer-events-none transition-all duration-300 opacity-0 transform -translate-y-4 max-w-xs w-full px-4">
+      <div id="toast-body" class="p-3.5 rounded-xl bg-slate-800 text-white text-xs font-semibold shadow-2xl border border-slate-700 flex items-center gap-2.5">
+        <i id="toast-icon" class="fa-solid fa-circle-check text-emerald-400 text-sm"></i>
+        <span id="toast-message">Action successful</span>
+      </div>
+    </div>
+
+    <!-- MODAL 1: ADD EXPENSE -->
+    <div id="modal-expense" class="fixed inset-0 z-50 bg-black/75 backdrop-blur-sm hidden flex items-end sm:items-center justify-center p-0 sm:p-4" onclick="closeModal('modal-expense')">
+      <div class="w-full max-w-md bg-[#151C28] border-t sm:border border-slate-800 rounded-t-3xl sm:rounded-2xl p-5 space-y-4 max-h-[85vh] overflow-y-auto" onclick="event.stopPropagation()">
+        
+        <div class="flex justify-between items-center pb-2 border-b border-slate-800">
+          <h3 class="text-base font-bold text-slate-100 flex items-center gap-2">
+            <i class="fa-solid fa-circle-plus text-purple-400"></i> Add Expense
+          </h3>
+          <button onclick="closeModal('modal-expense')" class="w-7 h-7 rounded-full bg-slate-800 text-slate-400 hover:text-white flex items-center justify-center text-xs">
+            <i class="fa-solid fa-xmark"></i>
+          </button>
+        </div>
+
+        <form onsubmit="handleAddExpense(event)" class="space-y-4">
+          <!-- Amount Input -->
+          <div>
+            <label class="block text-xs font-semibold text-slate-400 mb-1">Amount ($)</label>
+            <input type="number" id="exp-amount" step="0.01" min="0.01" placeholder="0.00" required 
+              class="w-full bg-slate-900 border border-slate-700/80 rounded-xl px-3.5 py-3 text-lg font-bold text-white placeholder-slate-600 focus:outline-none focus:border-purple-500 transition">
+          </div>
+
+          <!-- Category Selection -->
+          <div>
+            <label class="block text-xs font-semibold text-slate-400 mb-1.5">Category</label>
+            <div class="grid grid-cols-3 gap-2" id="exp-category-selector">
+              <button type="button" onclick="selectExpCategory('Food')" class="cat-btn py-2 px-3 rounded-xl border border-purple-500/50 bg-purple-500/10 text-purple-300 text-xs font-semibold flex items-center justify-center gap-1.5">
+                <i class="fa-solid fa-utensils"></i> Food
+              </button>
+              <button type="button" onclick="selectExpCategory('Transport')" class="cat-btn py-2 px-3 rounded-xl border border-slate-800 bg-slate-900 text-slate-400 text-xs font-semibold flex items-center justify-center gap-1.5">
+                <i class="fa-solid fa-bus"></i> Transport
+              </button>
+              <button type="button" onclick="selectExpCategory('Entertainment')" class="cat-btn py-2 px-3 rounded-xl border border-slate-800 bg-slate-900 text-slate-400 text-xs font-semibold flex items-center justify-center gap-1.5">
+                <i class="fa-solid fa-gamepad"></i> Fun
+              </button>
+            </div>
+            <input type="hidden" id="exp-category" value="Food">
+          </div>
+
+          <!-- Note/Title -->
+          <div>
+            <label class="block text-xs font-semibold text-slate-400 mb-1">Description / Note</label>
+            <input type="text" id="exp-note" placeholder="What was this for?" required
+              class="w-full bg-slate-900 border border-slate-700/80 rounded-xl px-3.5 py-2.5 text-xs text-white placeholder-slate-600 focus:outline-none focus:border-purple-500 transition">
+          </div>
+
+          <!-- Date -->
+          <div>
+            <label class="block text-xs font-semibold text-slate-400 mb-1">Date</label>
+            <input type="date" id="exp-date" required
+              class="w-full bg-slate-900 border border-slate-700/80 rounded-xl px-3.5 py-2.5 text-xs text-white focus:outline-none focus:border-purple-500 transition">
+          </div>
+
+          <!-- Action Buttons with High-Contrast Text -->
+          <div class="grid grid-cols-2 gap-3 pt-2">
+            <button type="button" onclick="closeModal('modal-expense')" class="py-3 px-4 rounded-xl bg-slate-800 text-slate-300 font-bold text-xs hover:bg-slate-700 transition">
+              Cancel
+            </button>
+            <button type="submit" class="py-3 px-4 rounded-xl bg-gradient-to-r from-purple-500 to-cyan-400 text-[#090D16] font-extrabold text-xs shadow-lg glow-cyan hover:opacity-95 transition active:scale-95">
+              + Save Expense
+            </button>
+          </div>
+        </form>
+
+      </div>
+    </div>
+
+    <!-- MODAL 2: ADD SUBSCRIPTION -->
+    <div id="modal-subscription" class="fixed inset-0 z-50 bg-black/75 backdrop-blur-sm hidden flex items-end sm:items-center justify-center p-0 sm:p-4" onclick="closeModal('modal-subscription')">
+      <div class="w-full max-w-md bg-[#151C28] border-t sm:border border-slate-800 rounded-t-3xl sm:rounded-2xl p-5 space-y-4 max-h-[85vh] overflow-y-auto" onclick="event.stopPropagation()">
+        
+        <div class="flex justify-between items-center pb-2 border-b border-slate-800">
+          <h3 class="text-base font-bold text-slate-100 flex items-center gap-2">
+            <i class="fa-solid fa-repeat text-cyan-400"></i> New Subscription
+          </h3>
+          <button onclick="closeModal('modal-subscription')" class="w-7 h-7 rounded-full bg-slate-800 text-slate-400 hover:text-white flex items-center justify-center text-xs">
+            <i class="fa-solid fa-xmark"></i>
+          </button>
+        </div>
+
+        <form onsubmit="handleAddSubscription(event)" class="space-y-4">
+          <div>
+            <label class="block text-xs font-semibold text-slate-400 mb-1">Service Name</label>
+            <input type="text" id="sub-name" placeholder="Netflix, Gym, Spotify..." required 
+              class="w-full bg-slate-900 border border-slate-700/80 rounded-xl px-3.5 py-2.5 text-xs text-white placeholder-slate-600 focus:outline-none focus:border-cyan-500">
+          </div>
+
+          <div>
+            <label class="block text-xs font-semibold text-slate-400 mb-1">Monthly Cost ($)</label>
+            <input type="number" id="sub-cost" step="0.01" min="0.01" placeholder="14.99" required 
+              class="w-full bg-slate-900 border border-slate-700/80 rounded-xl px-3.5 py-2.5 text-sm font-bold text-white placeholder-slate-600 focus:outline-none focus:border-cyan-500">
+          </div>
+
+          <div>
+            <label class="block text-xs font-semibold text-slate-400 mb-1">Due Day (Day of Month)</label>
+            <input type="number" id="sub-day" min="1" max="31" placeholder="15" required 
+              class="w-full bg-slate-900 border border-slate-700/80 rounded-xl px-3.5 py-2.5 text-xs text-white placeholder-slate-600 focus:outline-none focus:border-cyan-500">
+          </div>
+
+          <div class="grid grid-cols-2 gap-3 pt-2">
+            <button type="button" onclick="closeModal('modal-subscription')" class="py-3 px-4 rounded-xl bg-slate-800 text-slate-300 font-bold text-xs hover:bg-slate-700">
+              Cancel
+            </button>
+            <button type="submit" class="py-3 px-4 rounded-xl bg-gradient-to-r from-cyan-400 to-emerald-400 text-[#090D16] font-extrabold text-xs shadow-lg glow-cyan hover:opacity-95 active:scale-95">
+              + Save Subscription
+            </button>
+          </div>
+        </form>
+
+      </div>
+    </div>
+
+    <!-- MODAL 3: ADD SAVINGS GOAL -->
+    <div id="modal-goal" class="fixed inset-0 z-50 bg-black/75 backdrop-blur-sm hidden flex items-end sm:items-center justify-center p-0 sm:p-4" onclick="closeModal('modal-goal')">
+      <div class="w-full max-w-md bg-[#151C28] border-t sm:border border-slate-800 rounded-t-3xl sm:rounded-2xl p-5 space-y-4 max-h-[85vh] overflow-y-auto" onclick="event.stopPropagation()">
+        
+        <div class="flex justify-between items-center pb-2 border-b border-slate-800">
+          <h3 class="text-base font-bold text-slate-100 flex items-center gap-2">
+            <i class="fa-solid fa-bullseye text-emerald-400"></i> New Savings Goal
+          </h3>
+          <button onclick="closeModal('modal-goal')" class="w-7 h-7 rounded-full bg-slate-800 text-slate-400 hover:text-white flex items-center justify-center text-xs">
+            <i class="fa-solid fa-xmark"></i>
+          </button>
+        </div>
+
+        <form onsubmit="handleAddGoal(event)" class="space-y-4">
+          <div>
+            <label class="block text-xs font-semibold text-slate-400 mb-1">Goal Title</label>
+            <input type="text" id="goal-title" placeholder="Emergency Fund, New Laptop..." required 
+              class="w-full bg-slate-900 border border-slate-700/80 rounded-xl px-3.5 py-2.5 text-xs text-white placeholder-slate-600 focus:outline-none focus:border-emerald-500">
+          </div>
+
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label class="block text-xs font-semibold text-slate-400 mb-1">Saved So Far ($)</label>
+              <input type="number" id="goal-saved" step="0.01" min="0" placeholder="0.00" required 
+                class="w-full bg-slate-900 border border-slate-700/80 rounded-xl px-3.5 py-2.5 text-xs font-bold text-white placeholder-slate-600 focus:outline-none focus:border-emerald-500">
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-slate-400 mb-1">Target Amount ($)</label>
+              <input type="number" id="goal-target" step="0.01" min="1" placeholder="1000.00" required 
+                class="w-full bg-slate-900 border border-slate-700/80 rounded-xl px-3.5 py-2.5 text-xs font-bold text-white placeholder-slate-600 focus:outline-none focus:border-emerald-500">
+            </div>
+          </div>
+
+          <div class="grid grid-cols-2 gap-3 pt-2">
+            <button type="button" onclick="closeModal('modal-goal')" class="py-3 px-4 rounded-xl bg-slate-800 text-slate-300 font-bold text-xs hover:bg-slate-700">
+              Cancel
+            </button>
+            <button type="submit" class="py-3 px-4 rounded-xl bg-gradient-to-r from-emerald-400 to-teal-400 text-[#090D16] font-extrabold text-xs shadow-lg hover:opacity-95 active:scale-95">
+              + Create Goal
+            </button>
+          </div>
+        </form>
+
+      </div>
+    </div>
+
+  </div>
+
+  <!-- JavaScript Engine -->
+  <script>
+    const defaultData = {
+      budgetCap: 1750.00,
+      subscriptions: [
+        { id: '1', name: 'Gym Membership', cost: 45.00, day: 25, icon: 'fa-dumbbell', color: 'bg-emerald-500/10 text-emerald-400' },
+        { id: '2', name: 'Netflix 4K', cost: 15.99, day: 29, icon: 'fa-tv', color: 'bg-rose-500/10 text-rose-400' },
+        { id: '3', name: 'Cloud Storage', cost: 2.99, day: 1, icon: 'fa-cloud', color: 'bg-cyan-500/10 text-cyan-400' },
+        { id: '4', name: 'Spotify Premium', cost: 10.99, day: 5, icon: 'fa-music', color: 'bg-green-500/10 text-green-400' }
+      ],
+      goals: [
+        { id: '1', title: 'Emergency Fund', saved: 2300.00, target: 9500.00, color: 'from-emerald-400 to-teal-500' },
+        { id: '2', title: 'New Laptop', saved: 300.00, target: 1500.00, color: 'from-purple-400 to-indigo-500' }
+      ],
+      transactions: [
+        { id: '1', note: 'Weekly groceries', amount: 85.50, category: 'Food', date: '2026-08-24', icon: 'fa-utensils', color: 'text-amber-400' },
+        { id: '2', note: 'Ride share to work', amount: 12.30, category: 'Transport', date: '2026-08-24', icon: 'fa-bus', color: 'text-purple-400' },
+        { id: '3', note: 'Coffee & Snacks', amount: 4.50, category: 'Food', date: '2026-08-23', icon: 'fa-mug-hot', color: 'text-amber-400' }
+      ],
+      categories: [
+        { name: 'Food', cap: 600, icon: 'fa-utensils', color: 'bg-amber-500' },
+        { name: 'Transport', cap: 200, icon: 'fa-bus', color: 'bg-purple-500' },
+        { name: 'Fun', cap: 150, icon: 'fa-gamepad', color: 'bg-pink-500' },
+        { name: 'Shopping', cap: 300, icon: 'fa-bag-shopping', color: 'bg-cyan-500' }
+      ]
+    };
+
+    let state = JSON.parse(localStorage.getItem('synthbudget_db')) || defaultData;
+
+    function saveState() {
+      localStorage.setItem('synthbudget_db', JSON.stringify(state));
+      renderApp();
+    }
+
+    window.onload = function() {
+      const today = new Date();
+      document.getElementById('current-date-display').innerText = today.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+      document.getElementById('exp-date').valueAsDate = today;
+      renderApp();
+    };
+
+    function switchTab(tabName) {
+      ['overview', 'subscriptions', 'savings', 'spending'].forEach(tab => {
+        document.getElementById(`tab-${tab}`).classList.add('hidden');
+        const navBtn = document.getElementById(`nav-${tab}`);
+        navBtn.classList.remove('text-purple-400');
+        navBtn.classList.add('text-slate-500');
+      });
+
+      document.getElementById(`tab-${tabName}`).classList.remove('hidden');
+      const activeNav = document.getElementById(`nav-${tabName}`);
+      activeNav.classList.remove('text-slate-500');
+      activeNav.classList.add('text-purple-400');
+
+      if (tabName === 'subscriptions') renderSubscriptionsFull();
+      if (tabName === 'savings') renderSavingsFull();
+      if (tabName === 'spending') renderCategoriesBreakdown();
+    }
+
+    function renderApp() {
+      const totalSubs = state.subscriptions.reduce((sum, item) => sum + Number(item.cost), 0);
+      const totalSaved = state.goals.reduce((sum, item) => sum + Number(item.saved), 0);
+      const totalSpent = state.transactions.reduce((sum, item) => sum + Number(item.amount), 0);
+
+      document.getElementById('summary-subscriptions').innerText = `$${totalSubs.toFixed(2)}`;
+      document.getElementById('summary-saved').innerText = `$${totalSaved.toFixed(2)}`;
+      document.getElementById('summary-spent').innerText = `$${totalSpent.toFixed(2)}`;
+      document.getElementById('subs-total-badge').innerText = `$${totalSubs.toFixed(2)}/mo`;
+
+      const budgetPct = Math.min(100, Math.round((totalSpent / state.budgetCap) * 100));
+      document.getElementById('budget-ratio-text').innerText = `$${totalSpent.toFixed(2)} / $${state.budgetCap.toFixed(2)}`;
+      document.getElementById('budget-progress-bar').style.width = `${budgetPct}%`;
+
+      const subsContainer = document.getElementById('subscriptions-list');
+      subsContainer.innerHTML = state.subscriptions.map(sub => `
+        <div class="glass-card p-3 rounded-xl flex items-center justify-between border border-slate-800">
+          <div class="flex items-center gap-3">
+            <div class="w-9 h-9 rounded-xl ${sub.color || 'bg-purple-500/10 text-purple-400'} flex items-center justify-center text-sm">
+              <i class="fa-solid ${sub.icon}"></i>
+            </div>
+            <div>
+              <h4 class="text-xs font-bold text-slate-100">${sub.name}</h4>
+              <p class="text-[10px] text-slate-400">Due day ${sub.day} of month</p>
+            </div>
+          </div>
+          <div class="text-right">
+            <span class="text-xs font-bold text-slate-200">$${Number(sub.cost).toFixed(2)}</span>
+            <span class="block text-[9px] px-2 py-0.5 rounded-full bg-purple-500/10 text-purple-300 font-semibold mt-0.5">Monthly</span>
+          </div>
+        </div>
+      `).join('');
+
+      const goalsContainer = document.getElementById('savings-goals-list');
+      goalsContainer.innerHTML = state.goals.map(goal => {
+        const pct = Math.min(100, Math.round((goal.saved / goal.target) * 100));
+        return `
+          <div class="glass-card p-3 rounded-xl space-y-2 border border-slate-800">
+            <div class="flex justify-between items-center text-xs">
+              <span class="font-bold text-slate-200">${goal.title}</span>
+              <span class="font-bold text-emerald-400">$${Number(goal.saved).toFixed(2)} / $${Number(goal.target).toFixed(2)}</span>
+            </div>
+            <div class="w-full h-2 bg-slate-800 rounded-full overflow-hidden">
+              <div class="h-full bg-gradient-to-r ${goal.color || 'from-emerald-400 to-teal-500'} rounded-full transition-all duration-500" style="width: ${pct}%"></div>
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      const txContainer = document.getElementById('transactions-list');
+      txContainer.innerHTML = state.transactions.map(tx => `
+        <div class="glass-card p-3 rounded-xl flex items-center justify-between border border-slate-800">
+          <div class="flex items-center gap-3">
+            <div class="w-8 h-8 rounded-xl bg-slate-800 flex items-center justify-center text-xs text-purple-400">
+              <i class="fa-solid ${tx.icon || 'fa-receipt'}"></i>
+            </div>
+            <div>
+              <h4 class="text-xs font-bold text-slate-200">${tx.note}</h4>
+              <p class="text-[10px] text-slate-400">${tx.date} • ${tx.category}</p>
+            </div>
+          </div>
+          <span class="text-xs font-extrabold text-rose-400">-$${Number(tx.amount).toFixed(2)}</span>
+        </div>
+      `).join('');
+    }
+
+    function openModal(id) {
+      document.getElementById(id).classList.remove('hidden');
+    }
+
+    function closeModal(id) {
+      document.getElementById(id).classList.add('hidden');
+    }
+
+    function selectExpCategory(cat) {
+      document.getElementById('exp-category').value = cat;
+      const buttons = document.querySelectorAll('.cat-btn');
+      buttons.forEach(btn => {
+        btn.classList.remove('border-purple-500/50', 'bg-purple-500/10', 'text-purple-300');
+        btn.classList.add('border-slate-800', 'bg-slate-900', 'text-slate-400');
+      });
+      event.currentTarget.classList.remove('border-slate-800', 'bg-slate-900', 'text-slate-400');
+      event.currentTarget.classList.add('border-purple-500/50', 'bg-purple-500/10', 'text-purple-300');
+    }
+
+    function handleAddExpense(e) {
+      e.preventDefault();
+      const amount = parseFloat(document.getElementById('exp-amount').value);
+      const note = document.getElementById('exp-note').value.trim();
+      const category = document.getElementById('exp-category').value;
+      const date = document.getElementById('exp-date').value;
+
+      if (!amount || amount <= 0) {
+        showToast('Please enter an amount greater than $0.00', 'fa-triangle-exclamation', 'text-amber-400');
+        return;
+      }
+
+      state.transactions.unshift({
+        id: Date.now().toString(),
+        note,
+        amount,
+        category,
+        date,
+        icon: category === 'Food' ? 'fa-utensils' : category === 'Transport' ? 'fa-bus' : 'fa-gamepad'
+      });
+
+      saveState();
+      closeModal('modal-expense');
+      e.target.reset();
+      showToast('Expense added successfully!');
+    }
+
+    function handleAddSubscription(e) {
+      e.preventDefault();
+      const name = document.getElementById('sub-name').value.trim();
+      const cost = parseFloat(document.getElementById('sub-cost').value);
+      const day = parseInt(document.getElementById('sub-day').value);
+
+      if (!cost || cost <= 0) {
+        showToast('Please enter a valid monthly cost', 'fa-triangle-exclamation', 'text-amber-400');
+        return;
+      }
+
+      state.subscriptions.push({
+        id: Date.now().toString(),
+        name,
+        cost,
+        day,
+        icon: 'fa-repeat',
+        color: 'bg-cyan-500/10 text-cyan-400'
+      });
+
+      saveState();
+      closeModal('modal-subscription');
+      e.target.reset();
+      showToast('Subscription saved!');
+    }
+
+    function handleAddGoal(e) {
+      e.preventDefault();
+      const title = document.getElementById('goal-title').value.trim();
+      const saved = parseFloat(document.getElementById('goal-saved').value) || 0;
+      const target = parseFloat(document.getElementById('goal-target').value);
+
+      if (!target || target <= 0) {
+        showToast('Target amount must be greater than $0.00', 'fa-triangle-exclamation', 'text-amber-400');
+        return;
+      }
+
+      state.goals.push({
+        id: Date.now().toString(),
+        title,
+        saved,
+        target,
+        color: 'from-purple-400 to-cyan-500'
+      });
+
+      saveState();
+      closeModal('modal-goal');
+      e.target.reset();
+      showToast('New goal created!');
+    }
+
+    function renderSubscriptionsFull() {
+      const container = document.getElementById('subscriptions-full-list');
+      container.innerHTML = state.subscriptions.map(sub => `
+        <div class="glass-card p-4 rounded-xl flex items-center justify-between border border-slate-800">
+          <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-xl ${sub.color} flex items-center justify-center text-base">
+              <i class="fa-solid ${sub.icon}"></i>
+            </div>
+            <div>
+              <h4 class="text-sm font-bold text-slate-100">${sub.name}</h4>
+              <p class="text-xs text-slate-400">Repeats monthly on day ${sub.day}</p>
+            </div>
+          </div>
+          <div class="flex items-center gap-3">
+            <span class="text-sm font-extrabold text-cyan-400">$${Number(sub.cost).toFixed(2)}</span>
+            <button onclick="deleteSubscription('${sub.id}')" class="text-slate-500 hover:text-rose-400 text-xs p-1">
+              <i class="fa-solid fa-trash"></i>
+            </button>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function renderSavingsFull() {
+      const container = document.getElementById('savings-full-list');
+      container.innerHTML = state.goals.map(goal => {
+        const pct = Math.min(100, Math.round((goal.saved / goal.target) * 100));
+        return `
+          <div class="glass-card p-4 rounded-xl space-y-3 border border-slate-800">
+            <div class="flex justify-between items-center text-xs">
+              <span class="font-bold text-sm text-slate-100">${goal.title}</span>
+              <span class="font-extrabold text-emerald-400">$${Number(goal.saved).toFixed(2)} / $${Number(goal.target).toFixed(2)}</span>
+            </div>
+            <div class="w-full h-3 bg-slate-900 rounded-full overflow-hidden">
+              <div class="h-full bg-gradient-to-r ${goal.color} rounded-full" style="width: ${pct}%"></div>
+            </div>
+            <div class="flex justify-between items-center text-[11px] text-slate-400 pt-1">
+              <span>${pct}% Completed</span>
+              <button onclick="deleteGoal('${goal.id}')" class="text-rose-400 hover:underline">Remove</button>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function renderCategoriesBreakdown() {
+      const container = document.getElementById('categories-breakdown-list');
+      const catTotals = {};
+
+      state.transactions.forEach(tx => {
+        catTotals[tx.category] = (catTotals[tx.category] || 0) + Number(tx.amount);
+      });
+
+      container.innerHTML = state.categories.map(cat => {
+        const spent = catTotals[cat.name] || 0;
+        const pct = Math.min(100, Math.round((spent / cat.cap) * 100));
+        return `
+          <div class="glass-card p-3.5 rounded-xl space-y-2 border border-slate-800">
+            <div class="flex justify-between items-center text-xs">
+              <span class="font-bold text-slate-200 flex items-center gap-2">
+                <i class="fa-solid ${cat.icon} text-purple-400"></i> ${cat.name}
+              </span>
+              <span class="font-semibold text-slate-300">$${spent.toFixed(2)} / $${cat.cap}</span>
+            </div>
+            <div class="w-full h-2 bg-slate-900 rounded-full overflow-hidden">
+              <div class="h-full ${cat.color} rounded-full" style="width: ${pct}%"></div>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function deleteSubscription(id) {
+      state.subscriptions = state.subscriptions.filter(s => s.id !== id);
+      saveState();
+      renderSubscriptionsFull();
+      showToast('Subscription deleted');
+    }
+
+    function deleteGoal(id) {
+      state.goals = state.goals.filter(g => g.id !== id);
+      saveState();
+      renderSavingsFull();
+      showToast('Savings goal deleted');
+    }
+
+    function exportData() {
+      const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(state, null, 2));
+      const downloadAnchor = document.createElement('a');
+      downloadAnchor.setAttribute("href", dataStr);
+      downloadAnchor.setAttribute("download", `synthbudget_backup_${new Date().toISOString().slice(0,10)}.json`);
+      document.body.appendChild(downloadAnchor);
+      downloadAnchor.click();
+      downloadAnchor.remove();
+      showToast('Backup downloaded successfully!');
+    }
+
+    function importData(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        try {
+          const importedState = JSON.parse(e.target.result);
+          if (importedState.subscriptions && importedState.transactions) {
+            state = importedState;
+            saveState();
+            showToast('Data restored successfully!');
+          } else {
+            showToast('Invalid backup file', 'fa-triangle-exclamation', 'text-amber-400');
+          }
+        } catch (err) {
+          showToast('Failed to parse file', 'fa-triangle-exclamation', 'text-amber-400');
+        }
+      };
+      reader.readAsText(file);
+    }
+
+    function showToast(msg, icon = 'fa-circle-check', iconColor = 'text-emerald-400') {
+      const toast = document.getElementById('toast');
+      document.getElementById('toast-message').innerText = msg;
+      const toastIcon = document.getElementById('toast-icon');
+      toastIcon.className = `fa-solid ${icon} ${iconColor} text-sm`;
+
+      toast.classList.remove('opacity-0', '-translate-y-4');
+      toast.classList.add('opacity-100', 'translate-y-0');
+
+      setTimeout(() => {
+        toast.classList.remove('opacity-100', 'translate-y-0');
+        toast.classList.add('opacity-0', '-translate-y-4');
+      }, 2500);
+    }
+  </script>
+</body>
+</html>
