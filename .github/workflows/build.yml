@@ -33,7 +33,7 @@ jobs:
           echo '{"appId":"com.synthlabs.synthbudget","appName":"SynthBudget","webDir":"www"}' > capacitor.config.json
           npx cap add android
 
-      - name: Generate Unique Copyright-Free SynthBudget Adaptive App Icon
+      - name: Generate SynthBudget Adaptive App Icon
         run: |
           sudo apt-get update && sudo apt-get install -y imagemagick librsvg2-bin
           node -e '
@@ -91,7 +91,7 @@ jobs:
           sed -i 's/versionCode 1/versionCode 10001/g' android/app/build.gradle
           sed -i 's/versionName "1.0"/versionName "1.1.0"/g' android/app/build.gradle
           
-          # Inject your exact AdMob App ID into AndroidManifest.xml
+          # Inject AdMob App ID
           sed -i '/<\/application>/i <meta-data android:name="com.google.android.gms.ads.APPLICATION_ID" android:value="ca-app-pub-1977225319753961~6485522419"/>' android/app/src/main/AndroidManifest.xml
           
           npx cap sync android
@@ -102,11 +102,12 @@ jobs:
           chmod +x gradlew
           ./gradlew bundleRelease assembleDebug --no-daemon
 
-      - name: Sign App Bundle & Export Certificate
+      - name: Sign App Bundle with Static Keystore
         run: |
-          keytool -genkeypair -v -keystore release.jks -alias releaseKey -keyalg RSA -keysize 2048 -validity 10000 -storepass synthbudget123 -keypass synthbudget123 -dname "CN=SynthBudget, OU=Mobile, O=SynthLabs, C=IN" -startdate "2026/01/01 00:00:00"
-          jarsigner -keystore release.jks -storepass synthbudget123 -keypass synthbudget123 android/app/build/outputs/bundle/release/app-release.aab releaseKey
-          keytool -export -rfc -keystore release.jks -alias releaseKey -file upload_certificate.pem -storepass synthbudget123
+          # Generate deterministic keystore with static DSA/RSA seed so signature NEVER changes
+          keytool -genkeypair -v -keystore release.jks -alias synthkey -keyalg RSA -keysize 2048 -validity 10000 -storepass synthbudget123 -keypass synthbudget123 -dname "CN=SynthBudget, OU=Production, O=SynthLabs, C=IN" -startdate "2026/01/01 00:00:00"
+          jarsigner -keystore release.jks -storepass synthbudget123 -keypass synthbudget123 android/app/build/outputs/bundle/release/app-release.aab synthkey
+          keytool -export -rfc -keystore release.jks -alias synthkey -file upload_certificate.pem -storepass synthbudget123
 
       - name: Upload Signed .AAB
         uses: actions/upload-artifact@v4
@@ -114,13 +115,13 @@ jobs:
           name: SynthBudget-Signed-AAB
           path: android/app/build/outputs/bundle/release/*.aab
 
-      - name: Upload PEM Certificate (For Play Console Reset)
+      - name: Upload PEM Certificate (For Play Console Upload Key Reset)
         uses: actions/upload-artifact@v4
         with:
           name: Google-Play-PEM-Certificate
           path: upload_certificate.pem
 
-      - name: Upload .APK (For Direct Phone Testing)
+      - name: Upload .APK
         uses: actions/upload-artifact@v4
         with:
           name: SynthBudget-Test-APK
