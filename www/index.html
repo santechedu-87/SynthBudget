@@ -1,3 +1,4 @@
+```html
 <!DOCTYPE html>
 <html lang="en" class="dark">
 <head>
@@ -410,7 +411,7 @@
               <i class="fa-solid fa-rectangle-ad text-cyan-400 text-sm"></i>
               <span>Google AdMob Banner</span>
             </div>
-            <span class="text-[9px] uppercase tracking-wider px-2 py-0.5 rounded bg-slate-800 text-slate-400 font-semibold" id="admob-status-label">Active / SDK Ready</span>
+            <span class="text-[9px] uppercase tracking-wider px-2 py-0.5 rounded bg-slate-800 text-slate-400 font-semibold" id="admob-status-label">SDK Ready</span>
           </div>
         </div>
       </div>
@@ -712,6 +713,697 @@
           <button onclick="closeModal('modal-feedback')" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark"></i></button>
         </div>
         <p class="text-xs text-slate-400">Have suggestions or spotted a bug? Send your feedback directly to the Synth Labs development team.</p>
-        <textarea
+        <textarea id="feedback-text" rows="3" placeholder="Tell us how we can improve SynthBudget..." class="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-xs text-white focus:outline-none focus:border-indigo-500"></textarea>
+        <button onclick="submitFeedback()" class="w-full py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-slate-950 font-bold text-xs shadow-md">Send Feedback</button>
+      </div>
+    </div>
 
+  </div>
 
+  <!-- ==================== JAVASCRIPT APPLICATION LOGIC ==================== -->
+  <script>
+    // ADMOB CONFIGURATION
+    const ADMOB_CONFIG = {
+      appId: "ca-app-pub-1977225319753961~6485522419",
+      productionBannerId: "ca-app-pub-1977225319753961/6657852151",
+      testBannerId: "ca-app-pub-3940256099942544/6300978111"
+    };
+
+    // FULL ICON & COLOR PALETTES
+    const APP_ICONS = [
+      'fa-house', 'fa-credit-card', 'fa-wallet', 'fa-chart-pie', 'fa-film', 
+      'fa-music', 'fa-volume-high', 'fa-dumbbell', 'fa-mobile-screen', 'fa-cloud', 
+      'fa-cart-shopping', 'fa-shield-halved', 'fa-plane', 'fa-laptop', 'fa-utensils', 
+      'fa-bus', 'fa-gamepad', 'fa-bag-shopping', 'fa-receipt', 'fa-heart', 
+      'fa-asterisk', 'fa-car', 'fa-bolt', 'fa-wifi'
+    ];
+
+    const APP_COLORS = [
+      '#6366F1', '#10B981', '#F59E0B', '#EF4444', '#06B6D4', 
+      '#EC4899', '#A855F7', '#3B82F6', '#14B8A6', '#84CC16'
+    ];
+
+    const CURRENCIES = [
+      { sym: '$', code: 'USD' },
+      { sym: '₹', code: 'INR' },
+      { sym: '€', code: 'EUR' },
+      { sym: '£', code: 'GBP' }
+    ];
+
+    // ORIGINAL DATA STATE
+    const initialDatabase = {
+      budgetCap: 1750.00,
+      subscriptions: [
+        { id: '1', name: 'Gym', cost: 45.00, freq: 'monthly', cat: 'Health', renewal: '2026-08-26', icon: 'fa-dumbbell', color: '#10B981', duePill: '-5d', duePillColor: 'bg-rose-500/10 text-rose-400' },
+        { id: '2', name: 'Netflix', cost: 15.99, freq: 'monthly', cat: 'Entertainment', renewal: '2026-08-30', icon: 'fa-film', color: '#EF4444', duePill: '-1d', duePillColor: 'bg-rose-500/10 text-rose-400' },
+        { id: '3', name: 'Cloud Storage', cost: 2.99, freq: 'monthly', cat: 'Utilities', renewal: '2026-09-02', icon: 'fa-cloud', color: '#06B6D4', duePill: '2d', duePillColor: 'bg-rose-500/10 text-rose-400' },
+        { id: '4', name: 'Spotify', cost: 10.99, freq: 'monthly', cat: 'Music', renewal: '2026-09-06', icon: 'fa-music', color: '#10B981', duePill: '6d', duePillColor: 'bg-indigo-500/10 text-indigo-400' },
+        { id: '5', name: 'Phone Plan', cost: 55.00, freq: 'monthly', cat: 'Utilities', renewal: '2026-09-14', icon: 'fa-mobile-screen', color: '#6366F1', duePill: '14d', duePillColor: 'bg-indigo-500/10 text-indigo-400' },
+        { id: '6', name: 'Amazon Prime', cost: 139.00, freq: 'yearly', cat: 'Shopping', renewal: '2026-11-23', icon: 'fa-cart-shopping', color: '#F59E0B', duePill: '84d', duePillColor: 'bg-indigo-500/10 text-indigo-400' }
+      ],
+      goals: [
+        { id: '1', title: 'Emergency Fund', saved: 1200.00, target: 5000.00, deadline: '2026-12-31', icon: 'fa-shield-halved', color: '#10B981' },
+        { id: '2', title: 'Vacation', saved: 800.00, target: 3000.00, deadline: '2026-10-15', icon: 'fa-plane', color: '#06B6D4' },
+        { id: '3', title: 'New Laptop', saved: 300.00, target: 1500.00, deadline: '2026-11-01', icon: 'fa-laptop', color: '#6366F1' }
+      ],
+      transactions: [
+        { id: '1', note: 'Weekly groceries', amount: 85.50, category: 'Food', date: 'Aug 25, 2026', icon: 'fa-utensils', color: '#F59E0B' },
+        { id: '2', note: 'Ride share', amount: 12.30, category: 'Transport', date: 'Aug 25, 2026', icon: 'fa-bus', color: '#6366F1' },
+        { id: '3', note: 'Coffee', amount: 4.50, category: 'Food', date: 'Aug 24, 2026', icon: 'fa-utensils', color: '#F59E0B' },
+        { id: '4', note: 'Movie tickets', amount: 18.00, category: 'Entertainment', date: 'Aug 23, 2026', icon: 'fa-gamepad', color: '#EC4899' },
+        { id: '5', note: 'Household items', amount: 42.00, category: 'Shopping', date: 'Aug 22, 2026', icon: 'fa-bag-shopping', color: '#A855F7' }
+      ],
+      categories: [
+        { id: '1', name: 'Food', cap: 600, icon: 'fa-utensils', color: '#F59E0B' },
+        { id: '2', name: 'Transport', cap: 200, icon: 'fa-bus', color: '#6366F1' },
+        { id: '3', name: 'Bills', cap: 400, icon: 'fa-receipt', color: '#06B6D4' },
+        { id: '4', name: 'Health', cap: 100, icon: 'fa-heart', color: '#10B981' },
+        { id: '5', name: 'Entertainment', cap: 150, icon: 'fa-gamepad', color: '#EC4899' },
+        { id: '6', name: 'Shopping', cap: 300, icon: 'fa-bag-shopping', color: '#A855F7' }
+      ]
+    };
+
+    let appDB = JSON.parse(localStorage.getItem('synthbudget_v11_db')) || initialDatabase;
+    let currentCurrencyIdx = parseInt(localStorage.getItem('synth_currency_idx') || '0');
+
+    function saveDB() {
+      localStorage.setItem('synthbudget_v11_db', JSON.stringify(appDB));
+      renderEntireApp();
+    }
+
+    function getCur() {
+      return CURRENCIES[currentCurrencyIdx];
+    }
+
+    // ON DOM LOAD
+    document.addEventListener('DOMContentLoaded', () => {
+      initTheme();
+      initDynamicTimeGreeting();
+      buildIconAndColorPickers();
+      renderEntireApp();
+      initAdMob();
+    });
+
+    // ADMOB NATIVE INITIALIZATION
+    async function initAdMob() {
+      if (window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.AdMob) {
+        try {
+          const { AdMob } = window.Capacitor.Plugins;
+          await AdMob.initialize({ requestTrackingAuthorization: true });
+          
+          // Display Adaptive Banner at Bottom
+          await AdMob.showBanner({
+            adId: ADMOB_CONFIG.productionBannerId,
+            adSize: 'BANNER',
+            position: 'BOTTOM_CENTER',
+            margin: 60,
+            isTesting: true // Set to true during closed testing
+          });
+          const statusLabel = document.getElementById('admob-status-label');
+          if (statusLabel) statusLabel.innerText = "Active • Live Ready";
+        } catch (err) {
+          console.log("AdMob native init:", err);
+        }
+      }
+    }
+
+    // DYNAMIC TIME & COUNTRY GREETING
+    function initDynamicTimeGreeting() {
+      const now = new Date();
+      const hours = now.getHours();
+      let greeting = 'Good morning';
+
+      if (hours >= 12 && hours < 17) {
+        greeting = 'Good afternoon';
+      } else if (hours >= 17 && hours < 21) {
+        greeting = 'Good evening';
+      } else if (hours >= 21 || hours < 5) {
+        greeting = 'Good night';
+      }
+
+      const monthName = now.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+      document.getElementById('dynamic-time-greeting').innerText = greeting;
+      document.getElementById('greeting-subtext').innerText = monthName;
+      document.getElementById('header-date-subtext').innerText = monthName;
+
+      // Set input defaults
+      document.getElementById('exp-date').valueAsDate = now;
+      document.getElementById('sub-renewal-date').valueAsDate = now;
+      document.getElementById('goal-date').valueAsDate = now;
+    }
+
+    // THEME CONTROLLER
+    function initTheme() {
+      const saved = localStorage.getItem('synth_theme') || 'dark';
+      applyTheme(saved);
+    }
+
+    function toggleTheme() {
+      const isDark = document.documentElement.classList.contains('dark');
+      applyTheme(isDark ? 'light' : 'dark');
+    }
+
+    function applyTheme(mode) {
+      const icon = document.getElementById('theme-icon');
+      const label = document.getElementById('settings-theme-label');
+      if (mode === 'light') {
+        document.documentElement.classList.remove('dark');
+        document.body.className = 'min-h-screen bg-[#F4F7FB] text-slate-800 flex flex-col justify-between';
+        icon.className = 'fa-solid fa-moon text-indigo-400';
+        if (label) label.innerText = 'Light';
+        localStorage.setItem('synth_theme', 'light');
+      } else {
+        document.documentElement.classList.add('dark');
+        document.body.className = 'min-h-screen bg-[#0B0F17] text-slate-100 flex flex-col justify-between';
+        icon.className = 'fa-solid fa-sun text-amber-400';
+        if (label) label.innerText = 'Dark';
+        localStorage.setItem('synth_theme', 'dark');
+      }
+    }
+
+    // CURRENCY SWITCHER
+    function cycleCurrency() {
+      currentCurrencyIdx = (currentCurrencyIdx + 1) % CURRENCIES.length;
+      localStorage.setItem('synth_currency_idx', currentCurrencyIdx.toString());
+      renderEntireApp();
+      showToast(`Currency set to ${getCur().sym} ${getCur().code}`);
+    }
+
+    // TAB SWITCHER
+    function switchTab(tabName) {
+      ['overview', 'subscriptions', 'savings', 'spending', 'settings'].forEach(tab => {
+        const el = document.getElementById(`tab-${tab}`);
+        if (el) el.classList.add('hidden');
+        const nav = document.getElementById(`nav-${tab}`);
+        if (nav) {
+          nav.classList.remove('text-indigo-400');
+          nav.classList.add('text-slate-500');
+        }
+      });
+
+      const activeTab = document.getElementById(`tab-${tabName}`);
+      if (activeTab) activeTab.classList.remove('hidden');
+
+      const activeNav = document.getElementById(`nav-${tabName}`);
+      if (activeNav) {
+        activeNav.classList.remove('text-slate-500');
+        activeNav.classList.add('text-indigo-400');
+      }
+    }
+
+    // PICKER BUILDERS
+    function buildIconAndColorPickers() {
+      ['sub', 'cat', 'goal'].forEach(type => {
+        const iconBox = document.getElementById(`${type}-icon-picker`);
+        const colorBox = document.getElementById(`${type}-color-picker`);
+
+        if (iconBox) {
+          iconBox.innerHTML = APP_ICONS.map((icon, idx) => `
+            <button type="button" onclick="selectPickerIcon('${type}', '${icon}', this)" class="${type}-icon-btn w-10 h-10 rounded-xl bg-slate-900 border ${idx === 0 ? 'border-indigo-500 bg-indigo-500/20 text-indigo-300' : 'border-slate-800 text-slate-400'} flex items-center justify-center flex-shrink-0 text-sm active:scale-90">
+              <i class="fa-solid ${icon}"></i>
+            </button>
+          `).join('');
+        }
+
+        if (colorBox) {
+          colorBox.innerHTML = APP_COLORS.map((color, idx) => `
+            <button type="button" onclick="selectPickerColor('${type}', '${color}', this)" class="${type}-color-btn w-7 h-7 rounded-full border-2 ${idx === 0 ? 'border-white scale-110' : 'border-transparent'} flex-shrink-0 transition transform active:scale-95" style="background-color: ${color};">
+            </button>
+          `).join('');
+        }
+      });
+    }
+
+    function selectPickerIcon(type, iconClass, btn) {
+      document.getElementById(`${type}-selected-icon`).value = iconClass;
+      document.querySelectorAll(`.${type}-icon-btn`).forEach(b => {
+        b.className = `${type}-icon-btn w-10 h-10 rounded-xl bg-slate-900 border border-slate-800 text-slate-400 flex items-center justify-center flex-shrink-0 text-sm`;
+      });
+      btn.className = `${type}-icon-btn w-10 h-10 rounded-xl bg-indigo-500/20 border border-indigo-500 text-indigo-300 flex items-center justify-center flex-shrink-0 text-sm`;
+    }
+
+    function selectPickerColor(type, colorHex, btn) {
+      document.getElementById(`${type}-selected-color`).value = colorHex;
+      document.querySelectorAll(`.${type}-color-btn`).forEach(b => {
+        b.classList.remove('border-white', 'scale-110');
+        b.classList.add('border-transparent');
+      });
+      btn.classList.remove('border-transparent');
+      btn.classList.add('border-white', 'scale-110');
+    }
+
+    // RENDER ENTIRE APPLICATION
+    function renderEntireApp() {
+      const cur = getCur();
+      document.getElementById('active-currency-badge').innerText = `${cur.sym} ${cur.code}`;
+      document.getElementById('settings-current-currency').innerText = `${cur.sym} ${cur.code}`;
+
+      renderHome();
+      renderSubscriptions();
+      renderGoals();
+      renderSpending();
+      populateExpenseCategoryDropdown();
+    }
+
+    function renderHome() {
+      const cur = getCur();
+      let totalSubsMonthly = 0;
+      appDB.subscriptions.forEach(s => {
+        if (s.freq === 'yearly') totalSubsMonthly += (s.cost / 12);
+        else if (s.freq === 'weekly') totalSubsMonthly += (s.cost * 4.33);
+        else totalSubsMonthly += Number(s.cost);
+      });
+
+      const totalSaved = appDB.goals.reduce((acc, g) => acc + Number(g.saved), 0);
+      const totalTarget = appDB.goals.reduce((acc, g) => acc + Number(g.target), 0) || 1;
+      const totalSpent = appDB.transactions.reduce((acc, t) => acc + Number(t.amount), 0);
+
+      document.getElementById('summary-subscriptions').innerText = `${cur.sym}${totalSubsMonthly.toFixed(2)}`;
+      document.getElementById('summary-saved').innerText = `${cur.sym}${totalSaved.toFixed(2)}`;
+      document.getElementById('summary-spent').innerText = `${cur.sym}${totalSpent.toFixed(2)}`;
+      document.getElementById('home-subs-total').innerText = `${cur.sym}${totalSubsMonthly.toFixed(2)}/mo`;
+      document.getElementById('home-goals-ratio').innerText = `${cur.sym}${totalSaved.toFixed(2)} / ${cur.sym}${totalTarget.toFixed(2)}`;
+
+      // Home Subscriptions List
+      const homeSubsContainer = document.getElementById('home-subscriptions-list');
+      homeSubsContainer.innerHTML = appDB.subscriptions.map(s => {
+        const monthlyCost = s.freq === 'yearly' ? (s.cost / 12).toFixed(2) : Number(s.cost).toFixed(2);
+        return `
+          <div class="app-card p-3 rounded-2xl flex items-center justify-between">
+            <div class="flex items-center gap-3">
+              <div class="w-9 h-9 rounded-2xl flex items-center justify-center text-xs" style="background-color: ${s.color}20; color: ${s.color};">
+                <i class="fa-solid ${s.icon}"></i>
+              </div>
+              <div>
+                <h4 class="text-xs font-bold text-slate-100 dark:text-slate-100">${s.name}</h4>
+                <p class="text-[10px] text-slate-400">${s.renewal} • ${cur.sym}${monthlyCost} /mo</p>
+              </div>
+            </div>
+            <span class="text-[10px] font-bold px-2 py-0.5 rounded-md ${s.duePillColor || 'bg-indigo-500/10 text-indigo-400'}">${s.duePill || 'Active'}</span>
+          </div>
+        `;
+      }).join('');
+
+      // Home Goals List
+      const homeGoalsContainer = document.getElementById('home-goals-list');
+      homeGoalsContainer.innerHTML = appDB.goals.map(g => {
+        const pct = Math.min(100, Math.round((g.saved / g.target) * 100));
+        return `
+          <div class="app-card p-3 rounded-2xl space-y-2">
+            <div class="flex justify-between items-center text-xs">
+              <span class="font-bold text-slate-100 dark:text-slate-100">${g.title}</span>
+              <span class="font-bold text-emerald-400">${pct}%</span>
+            </div>
+            <p class="text-[10px] text-slate-400">${cur.sym}${Number(g.saved).toFixed(2)} of ${cur.sym}${Number(g.target).toFixed(2)} saved</p>
+            <div class="w-full h-1.5 bg-slate-800 rounded-full overflow-hidden">
+              <div class="h-full rounded-full" style="width: ${pct}%; background-color: ${g.color};"></div>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function renderSubscriptions() {
+      const cur = getCur();
+      const container = document.getElementById('subscriptions-full-list');
+      let monthlyTotal = 0;
+
+      appDB.subscriptions.forEach(s => {
+        if (s.freq === 'yearly') monthlyTotal += (s.cost / 12);
+        else if (s.freq === 'weekly') monthlyTotal += (s.cost * 4.33);
+        else monthlyTotal += Number(s.cost);
+      });
+
+      document.getElementById('subs-monthly-total').innerText = `${cur.sym}${monthlyTotal.toFixed(2)}`;
+      document.getElementById('subs-active-count').innerText = `${appDB.subscriptions.length} active`;
+
+      container.innerHTML = appDB.subscriptions.map(s => {
+        const monthlyCost = s.freq === 'yearly' ? (s.cost / 12).toFixed(2) : Number(s.cost).toFixed(2);
+        const freqText = s.freq === 'yearly' ? `${cur.sym}${Number(s.cost).toFixed(2)}/year` : (s.freq === 'weekly' ? `${cur.sym}${Number(s.cost).toFixed(2)}/wk` : `${cur.sym}${Number(s.cost).toFixed(2)}/month`);
+
+        return `
+          <div class="app-card p-3.5 rounded-2xl flex items-center justify-between">
+            <div class="flex items-center gap-3">
+              <div class="w-10 h-10 rounded-2xl flex items-center justify-center text-sm" style="background-color: ${s.color}20; color: ${s.color};">
+                <i class="fa-solid ${s.icon}"></i>
+              </div>
+              <div>
+                <h4 class="text-xs font-bold text-slate-100 dark:text-slate-100">${s.name}</h4>
+                <p class="text-[10px] text-slate-400">${s.cat} • ${cur.sym}${monthlyCost}/mo</p>
+                <p class="text-[9px] text-slate-500">Next: ${s.renewal} • ${s.duePill || ''} left</p>
+              </div>
+            </div>
+            <div class="flex items-center gap-2.5">
+              <span class="text-xs font-bold text-slate-200">${freqText}</span>
+              <button onclick="deleteSubscription('${s.id}')" class="text-slate-600 hover:text-rose-400 p-1">
+                <i class="fa-regular fa-trash-can text-xs"></i>
+              </button>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function renderGoals() {
+      const cur = getCur();
+      const container = document.getElementById('savings-full-list');
+      const totalSaved = appDB.goals.reduce((acc, g) => acc + Number(g.saved), 0);
+      const totalTarget = appDB.goals.reduce((acc, g) => acc + Number(g.target), 0) || 1;
+      const overallPct = Math.min(100, Math.round((totalSaved / totalTarget) * 100));
+
+      document.getElementById('goals-total-saved').innerText = `${cur.sym}${totalSaved.toFixed(2)}`;
+      document.getElementById('goals-total-progress').style.width = `${overallPct}%`;
+      document.getElementById('goals-target-text').innerText = `Goal: ${cur.sym}${totalTarget.toFixed(2)}`;
+      document.getElementById('goals-percent-text').innerText = `${overallPct}%`;
+
+      container.innerHTML = appDB.goals.map(g => {
+        const pct = Math.min(100, Math.round((g.saved / g.target) * 100));
+        return `
+          <div class="app-card p-4 rounded-2xl space-y-2">
+            <div class="flex justify-between items-center text-xs">
+              <span class="font-bold text-slate-100 dark:text-slate-100 flex items-center gap-2">
+                <i class="fa-solid ${g.icon}" style="color: ${g.color};"></i> ${g.title}
+              </span>
+              <span class="font-bold" style="color: ${g.color};">${pct}%</span>
+            </div>
+            <p class="text-[11px] text-slate-400">${cur.sym}${Number(g.saved).toFixed(2)} of ${cur.sym}${Number(g.target).toFixed(2)} saved</p>
+            <div class="w-full h-2 bg-slate-800 rounded-full overflow-hidden">
+              <div class="h-full rounded-full" style="width: ${pct}%; background-color: ${g.color};"></div>
+            </div>
+            <div class="flex justify-between items-center text-[10px] text-slate-500 pt-0.5">
+              <span>${g.deadline ? 'Due: ' + g.deadline : 'Ongoing Goal'}</span>
+              <button onclick="deleteGoal('${g.id}')" class="text-rose-400 hover:underline">Delete</button>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function renderSpending() {
+      const cur = getCur();
+      const totalSpent = appDB.transactions.reduce((acc, t) => acc + Number(t.amount), 0);
+      const remaining = Math.max(0, appDB.budgetCap - totalSpent);
+      const spentPct = Math.min(100, Math.round((totalSpent / appDB.budgetCap) * 100));
+
+      document.getElementById('spending-tab-spent').innerText = `${cur.sym}${totalSpent.toFixed(2)}`;
+      document.getElementById('spending-tab-budget').innerText = `${cur.sym}${appDB.budgetCap.toFixed(2)}`;
+      document.getElementById('spending-tab-remaining').innerText = `${cur.sym}${remaining.toFixed(2)}`;
+      document.getElementById('spending-progress-bar').style.width = `${spentPct}%`;
+
+      const catTotals = {};
+      appDB.transactions.forEach(t => {
+        catTotals[t.category] = (catTotals[t.category] || 0) + Number(t.amount);
+      });
+
+      // Spending Carousel
+      const carousel = document.getElementById('spending-categories-carousel');
+      carousel.innerHTML = appDB.categories.map(c => {
+        const spent = catTotals[c.name] || 0;
+        return `
+          <div class="app-card p-3 rounded-2xl min-w-[125px] flex-shrink-0 space-y-2">
+            <div class="w-8 h-8 rounded-xl flex items-center justify-center text-xs" style="background-color: ${c.color}20; color: ${c.color};">
+              <i class="fa-solid ${c.icon}"></i>
+            </div>
+            <div>
+              <h4 class="text-xs font-bold text-slate-100 dark:text-slate-100">${c.name}</h4>
+              <p class="text-[10px] text-slate-400 font-medium">${cur.sym}${spent.toFixed(0)} / ${cur.sym}${c.cap}</p>
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      // Spending Transactions
+      const txContainer = document.getElementById('spending-transactions-list');
+      txContainer.innerHTML = appDB.transactions.map(t => `
+        <div class="app-card p-3 rounded-2xl flex items-center justify-between">
+          <div class="flex items-center gap-3">
+            <div class="w-9 h-9 rounded-xl flex items-center justify-center text-xs" style="background-color: ${t.color}20; color: ${t.color};">
+              <i class="fa-solid ${t.icon}"></i>
+            </div>
+            <div>
+              <h4 class="text-xs font-bold text-slate-100 dark:text-slate-100">${t.note}</h4>
+              <p class="text-[10px] text-slate-400">${t.date} • ${t.category}</p>
+            </div>
+          </div>
+          <div class="flex items-center gap-2">
+            <span class="text-xs font-extrabold text-rose-400">-${cur.sym}${Number(t.amount).toFixed(2)}</span>
+            <button onclick="deleteTransaction('${t.id}')" class="text-slate-600 hover:text-rose-400 p-1">
+              <i class="fa-regular fa-trash-can text-xs"></i>
+            </button>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function populateExpenseCategoryDropdown() {
+      const select = document.getElementById('exp-category');
+      select.innerHTML = appDB.categories.map(c => `
+        <option value="${c.name}">${c.name}</option>
+      `).join('');
+    }
+
+    // MODAL CONTROL
+    function openModal(id) {
+      const m = document.getElementById(id);
+      if (m) {
+        m.classList.remove('hidden');
+        m.classList.add('flex');
+      }
+    }
+
+    function closeModal(id) {
+      const m = document.getElementById(id);
+      if (m) {
+        m.classList.add('hidden');
+        m.classList.remove('flex');
+      }
+    }
+
+    // FORM HANDLERS
+    function handleAddExpense(e) {
+      e.preventDefault();
+      const amount = parseFloat(document.getElementById('exp-amount').value);
+      const note = document.getElementById('exp-note').value.trim();
+      const category = document.getElementById('exp-category').value;
+      const dateVal = document.getElementById('exp-date').value;
+
+      if (!amount || amount <= 0) {
+        showToast('Please enter a valid amount');
+        return;
+      }
+
+      const matchedCat = appDB.categories.find(c => c.name === category) || { icon: 'fa-receipt', color: '#6366F1' };
+      const formattedDate = dateVal ? new Date(dateVal).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : 'Today';
+
+      appDB.transactions.unshift({
+        id: Date.now().toString(),
+        note,
+        amount,
+        category,
+        date: formattedDate,
+        icon: matchedCat.icon,
+        color: matchedCat.color
+      });
+
+      saveDB();
+      closeModal('modal-expense');
+      e.target.reset();
+      showToast('Expense saved!');
+    }
+
+    function setSubFrequency(freq) {
+      document.getElementById('sub-frequency').value = freq;
+      ['weekly', 'monthly', 'yearly'].forEach(f => {
+        const btn = document.getElementById(`freq-${f}`);
+        btn.className = 'py-1.5 text-xs font-semibold rounded-lg text-slate-400';
+      });
+      document.getElementById(`freq-${freq}`).className = 'py-1.5 text-xs font-bold rounded-lg bg-indigo-600 text-white';
+    }
+
+    function handleSaveSubscription(e) {
+      e.preventDefault();
+      const name = document.getElementById('sub-name').value.trim();
+      const cost = parseFloat(document.getElementById('sub-cost').value);
+      const freq = document.getElementById('sub-frequency').value;
+      const cat = document.getElementById('sub-cat').value.trim();
+      const renewal = document.getElementById('sub-renewal-date').value;
+      const icon = document.getElementById('sub-selected-icon').value;
+      const color = document.getElementById('sub-selected-color').value;
+
+      if (!cost || cost <= 0) {
+        showToast('Please enter a valid amount');
+        return;
+      }
+
+      appDB.subscriptions.unshift({
+        id: Date.now().toString(),
+        name,
+        cost,
+        freq,
+        cat,
+        renewal,
+        icon,
+        color,
+        duePill: 'Active',
+        duePillColor: 'bg-indigo-500/10 text-indigo-400'
+      });
+
+      saveDB();
+      closeModal('modal-subscription');
+      e.target.reset();
+      showToast('Subscription created!');
+    }
+
+    function handleCreateCategory(e) {
+      e.preventDefault();
+      const name = document.getElementById('cat-name').value.trim();
+      const cap = parseFloat(document.getElementById('cat-budget').value);
+      const icon = document.getElementById('cat-selected-icon').value;
+      const color = document.getElementById('cat-selected-color').value;
+
+      if (!name || !cap || cap <= 0) {
+        showToast('Please enter valid details');
+        return;
+      }
+
+      appDB.categories.push({
+        id: Date.now().toString(),
+        name,
+        cap,
+        icon,
+        color
+      });
+
+      saveDB();
+      closeModal('modal-category');
+      e.target.reset();
+      showToast('Category created!');
+    }
+
+    function handleCreateGoal(e) {
+      e.preventDefault();
+      const title = document.getElementById('goal-name').value.trim();
+      const target = parseFloat(document.getElementById('goal-target').value);
+      const saved = parseFloat(document.getElementById('goal-current').value) || 0;
+      const deadline = document.getElementById('goal-date').value;
+      const icon = document.getElementById('goal-selected-icon').value;
+      const color = document.getElementById('goal-selected-color').value;
+
+      if (!title || !target || target <= 0) {
+        showToast('Please enter valid goal details');
+        return;
+      }
+
+      appDB.goals.unshift({
+        id: Date.now().toString(),
+        title,
+        target,
+        saved,
+        deadline,
+        icon,
+        color
+      });
+
+      saveDB();
+      closeModal('modal-goal');
+      e.target.reset();
+      showToast('Savings goal created!');
+    }
+
+    // DELETIONS
+    function deleteTransaction(id) {
+      appDB.transactions = appDB.transactions.filter(t => t.id !== id);
+      saveDB();
+      showToast('Transaction deleted');
+    }
+
+    function deleteSubscription(id) {
+      appDB.subscriptions = appDB.subscriptions.filter(s => s.id !== id);
+      saveDB();
+      showToast('Subscription removed');
+    }
+
+    function deleteGoal(id) {
+      appDB.goals = appDB.goals.filter(g => g.id !== id);
+      saveDB();
+      showToast('Goal deleted');
+    }
+
+    function confirmResetData() {
+      appDB.transactions = [];
+      saveDB();
+      showToast('Transaction history cleared!');
+    }
+
+    // BACKUP & RESTORE
+    function exportData() {
+      const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(appDB, null, 2));
+      const anchor = document.createElement('a');
+      anchor.setAttribute("href", dataStr);
+      anchor.setAttribute("download", `synthbudget_backup_${new Date().toISOString().slice(0,10)}.json`);
+      document.body.appendChild(anchor);
+      anchor.click();
+      anchor.remove();
+      showToast('Backup file downloaded!');
+    }
+
+    function importData(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        try {
+          const parsed = JSON.parse(e.target.result);
+          if (parsed.subscriptions && parsed.transactions) {
+            appDB = parsed;
+            saveDB();
+            showToast('Data successfully restored!');
+          } else {
+            showToast('Invalid backup file');
+          }
+        } catch (err) {
+          showToast('Failed to parse file');
+        }
+      };
+      reader.readAsText(file);
+    }
+
+    function submitFeedback() {
+      const text = document.getElementById('feedback-text').value.trim();
+      if (!text) {
+        showToast('Please type your feedback');
+        return;
+      }
+      closeModal('modal-feedback');
+      document.getElementById('feedback-text').value = '';
+      showToast('Thank you! Feedback received.');
+    }
+
+    function shareApp() {
+      if (navigator.share) {
+        navigator.share({
+          title: 'SynthBudget',
+          text: 'Check out SynthBudget - Private, offline-first personal budget and subscription manager.',
+          url: 'https://play.google.com/store/apps/details?id=com.synthlabs.synthbudget'
+        }).catch(() => {});
+      } else {
+        showToast('Link copied to clipboard!');
+      }
+    }
+
+    function showToast(msg) {
+      const toast = document.getElementById('toast');
+      document.getElementById('toast-message').innerText = msg;
+      toast.classList.remove('opacity-0', '-translate-y-4');
+      toast.classList.add('opacity-100', 'translate-y-0');
+
+      setTimeout(() => {
+        toast.classList.remove('opacity-100', 'translate-y-0');
+        toast.classList.add('opacity-0', '-translate-y-4');
+      }, 2200);
+    }
+  </script>
+</body>
+</html>
+```
