@@ -26,16 +26,60 @@ jobs:
         with:
           node-version: 20
 
-      - name: Install Dependencies & Capacitor AdMob SDK
+      - name: Install Dependencies & Setup Capacitor
         run: |
           npm init -y
-          npm install @capacitor/core@6 @capacitor/cli@6 @capacitor/android@6 @capacitor-community/admob@6
+          npm install @capacitor/core@6 @capacitor/cli@6 @capacitor/android@6 @capacitor-community/admob@6 sharp
           echo '{"appId":"com.synthlabs.synthbudget","appName":"SynthBudget","webDir":"www"}' > capacitor.config.json
           npx cap add android
 
+      - name: Generate Custom SynthBudget App Launcher Icons
+        run: |
+          node -e '
+          const fs = require("fs");
+          const svg = `
+          <svg width="512" height="512" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+              <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stop-color="#0B0F17" />
+                <stop offset="100%" stop-color="#151C28" />
+              </linearGradient>
+              <linearGradient id="primaryGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stop-color="#6366F1" />
+                <stop offset="50%" stop-color="#06B6D4" />
+                <stop offset="100%" stop-color="#10B981" />
+              </linearGradient>
+            </defs>
+            <rect width="512" height="512" rx="128" fill="url(#bg)" />
+            <rect x="24" y="24" width="464" height="464" rx="104" fill="none" stroke="#232D3F" stroke-width="8" />
+            <!-- Wallet Base -->
+            <rect x="110" y="150" width="292" height="212" rx="36" fill="url(#primaryGrad)" />
+            <!-- Wallet Flap & Glow -->
+            <path d="M110 200 C110 170 130 150 160 150 L352 150 C382 150 402 170 402 200 L402 230 C340 230 310 250 290 270 C270 290 240 300 110 300 Z" fill="#0B0F17" opacity="0.35"/>
+            <!-- Center Cyan Core Chip -->
+            <circle cx="340" cy="256" r="26" fill="#0B0F17" />
+            <circle cx="340" cy="256" r="14" fill="#06B6D4" />
+          </svg>`;
+          
+          fs.writeFileSync("icon.svg", svg);
+          '
+          # Convert SVG to PNG icons across all standard Android mipmap densities
+          sudo apt-get install -y imagemagick
+          convert -background none icon.svg -resize 48x48 android/app/src/main/res/mipmap-mdpi/ic_launcher.png
+          convert -background none icon.svg -resize 72x72 android/app/src/main/res/mipmap-hdpi/ic_launcher.png
+          convert -background none icon.svg -resize 96x96 android/app/src/main/res/mipmap-xhdpi/ic_launcher.png
+          convert -background none icon.svg -resize 144x144 android/app/src/main/res/mipmap-xxhdpi/ic_launcher.png
+          convert -background none icon.svg -resize 192x192 android/app/src/main/res/mipmap-xxxhdpi/ic_launcher.png
+
+          # Also update round launcher variants
+          cp android/app/src/main/res/mipmap-mdpi/ic_launcher.png android/app/src/main/res/mipmap-mdpi/ic_launcher_round.png
+          cp android/app/src/main/res/mipmap-hdpi/ic_launcher.png android/app/src/main/res/mipmap-hdpi/ic_launcher_round.png
+          cp android/app/src/main/res/mipmap-xhdpi/ic_launcher.png android/app/src/main/res/mipmap-xhdpi/ic_launcher_round.png
+          cp android/app/src/main/res/mipmap-xxhdpi/ic_launcher.png android/app/src/main/res/mipmap-xxhdpi/ic_launcher_round.png
+          cp android/app/src/main/res/mipmap-xxxhdpi/ic_launcher.png android/app/src/main/res/mipmap-xxxhdpi/ic_launcher_round.png
+
       - name: Inject AdMob App ID & Version Bump
         run: |
-          # Bump Version to 10001 (v1.1.0)
           sed -i 's/versionCode 1/versionCode 10001/g' android/app/build.gradle
           sed -i 's/versionName "1.0"/versionName "1.1.0"/g' android/app/build.gradle
           
