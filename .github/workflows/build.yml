@@ -26,17 +26,23 @@ jobs:
         with:
           node-version: 20
 
-      - name: Install Capacitor & Sync
+      - name: Install Dependencies & Capacitor AdMob SDK
         run: |
           npm init -y
-          npm install @capacitor/core@6 @capacitor/cli@6 @capacitor/android@6
+          npm install @capacitor/core@6 @capacitor/cli@6 @capacitor/android@6 @capacitor-community/admob@6
           echo '{"appId":"com.synthlabs.synthbudget","appName":"SynthBudget","webDir":"www"}' > capacitor.config.json
           npx cap add android
-          npx cap sync android
 
-      - name: Update Version Code
+      - name: Inject AdMob App ID & Version Bump
         run: |
+          # Bump Version to 10001 (v1.1.0)
           sed -i 's/versionCode 1/versionCode 10001/g' android/app/build.gradle
+          sed -i 's/versionName "1.0"/versionName "1.1.0"/g' android/app/build.gradle
+          
+          # Inject AdMob App ID into AndroidManifest.xml
+          sed -i '/<\/application>/i <meta-data android:name="com.google.android.gms.ads.APPLICATION_ID" android:value="ca-app-pub-1977225319753961~6485522419"/>' android/app/src/main/AndroidManifest.xml
+          
+          npx cap sync android
 
       - name: Build Android Bundle & APK
         run: |
@@ -56,14 +62,16 @@ jobs:
           name: SynthBudget-Signed-AAB
           path: android/app/build/outputs/bundle/release/*.aab
 
-      - name: Upload PEM Certificate (For Play Console Reset)
+      - name: Upload PEM Certificate
         uses: actions/upload-artifact@v4
         with:
           name: Google-Play-PEM-Certificate
           path: upload_certificate.pem
 
-      - name: Upload .APK (For Phone Testing)
+      - name: Upload .APK (For Direct Phone Testing)
         uses: actions/upload-artifact@v4
         with:
           name: SynthBudget-Test-APK
           path: android/app/build/outputs/apk/debug/*.apk
+
+
