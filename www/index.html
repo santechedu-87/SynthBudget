@@ -14,10 +14,13 @@
         extend: {
           colors: {
             synth: {
-              bg: '#0B0F17',
-              card: '#151C28',
-              border: '#232D3F',
-              accent: '#8B5CF6',
+              bgDark: '#0B0F17',
+              cardDark: '#151C28',
+              borderDark: '#232D3F',
+              bgLight: '#F4F7FB',
+              cardLight: '#FFFFFF',
+              borderLight: '#E2E8F0',
+              accent: '#6366F1',
               cyan: '#06B6D4',
               pink: '#EC4899',
               green: '#10B981',
@@ -37,334 +40,583 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   
-  <!-- FontAwesome Icons -->
+  <!-- FontAwesome 6 Icons -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
   <style>
+    * {
+      -webkit-tap-highlight-color: transparent;
+      box-sizing: border-box;
+    }
     body {
       font-family: 'Plus Jakarta Sans', sans-serif;
-      background-color: #0B0F17;
-      color: #F3F4F6;
-      -webkit-tap-highlight-color: transparent;
       user-select: none;
+      overscroll-behavior-y: none;
+      transition: background-color 0.25s ease, color 0.25s ease;
     }
-    input, button {
+    input, button, select, textarea {
       user-select: auto;
     }
     .custom-scrollbar::-webkit-scrollbar {
-      width: 4px;
+      display: none;
     }
-    .custom-scrollbar::-webkit-scrollbar-thumb {
-      background: #232D3F;
-      border-radius: 4px;
+    .app-card {
+      transition: all 0.2s ease;
     }
-    .glass-card {
-      background: rgba(21, 28, 40, 0.85);
-      backdrop-filter: blur(12px);
-      border: 1px solid rgba(255, 255, 255, 0.08);
+    .dark .app-card {
+      background-color: #151C28;
+      border: 1px solid #232D3F;
+      box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.4);
     }
-    .glow-cyan {
-      box-shadow: 0 0 15px rgba(6, 182, 212, 0.25);
+    .app-card {
+      background-color: #FFFFFF;
+      border: 1px solid #E2E8F0;
+      box-shadow: 0 4px 15px -2px rgba(0, 0, 0, 0.04);
+    }
+    .safe-bottom {
+      padding-bottom: max(env(safe-area-inset-bottom, 14px), 14px);
     }
     .glow-accent {
-      box-shadow: 0 0 20px rgba(139, 92, 246, 0.3);
+      box-shadow: 0 0 20px rgba(99, 102, 241, 0.35);
     }
   </style>
 </head>
-<body class="min-h-screen pb-24 text-slate-100 flex justify-center bg-[#0B0F17]">
 
-  <div class="w-full max-w-md min-h-screen flex flex-col relative bg-[#0B0F17] shadow-2xl border-x border-slate-800/50">
+<body class="min-h-screen bg-[#0B0F17] text-slate-100 flex flex-col justify-between dark:bg-[#0B0F17] dark:text-slate-100">
+
+  <!-- MAIN MOBILE WRAPPER -->
+  <div class="w-full flex-1 flex flex-col relative min-h-screen pb-32">
     
-    <!-- Top Header Bar -->
-    <header class="sticky top-0 z-20 px-5 pt-5 pb-3 bg-[#0B0F17]/90 backdrop-blur-md border-b border-slate-800/80 flex items-center justify-between">
-      <div>
-        <h1 class="text-xl font-extrabold tracking-tight bg-gradient-to-r from-purple-400 via-cyan-400 to-pink-400 bg-clip-text text-transparent">
-          SynthBudget
-        </h1>
-        <p class="text-xs text-slate-400 font-medium" id="current-date-display">Loading date...</p>
+    <!-- TOP HEADER -->
+    <header class="sticky top-0 z-30 px-4 pt-3.5 pb-2.5 bg-[#0B0F17]/95 dark:bg-[#0B0F17]/95 backdrop-blur-md border-b border-slate-800 dark:border-slate-800 flex items-center justify-between transition-colors" id="main-header">
+      <div class="flex items-center gap-2.5">
+        <div class="w-8 h-8 rounded-xl bg-gradient-to-tr from-indigo-600 via-cyan-500 to-emerald-400 flex items-center justify-center shadow-md">
+          <i class="fa-solid fa-wallet text-slate-950 text-xs"></i>
+        </div>
+        <div>
+          <h1 class="text-base font-extrabold tracking-tight bg-gradient-to-r from-indigo-400 via-cyan-400 to-emerald-400 bg-clip-text text-transparent leading-none">
+            SynthBudget
+          </h1>
+          <p class="text-[10px] text-slate-400 font-medium mt-0.5" id="header-date-subtext">August 2026</p>
+        </div>
       </div>
 
-      <div class="flex items-center gap-2">
-        <button onclick="exportData()" title="Backup Data" class="p-2.5 rounded-xl bg-slate-800/80 hover:bg-slate-700 text-slate-300 transition-all border border-slate-700/50 text-xs flex items-center gap-1.5 active:scale-90">
+      <!-- Action Icons: Backup, Restore, Theme Toggle -->
+      <div class="flex items-center gap-1.5">
+        <button onclick="exportData()" title="Backup Data" class="w-8 h-8 rounded-xl bg-slate-800/80 hover:bg-slate-700 text-slate-300 transition-all border border-slate-700/50 text-xs flex items-center justify-center active:scale-90">
           <i class="fa-solid fa-download"></i>
         </button>
-        <button onclick="document.getElementById('import-file').click()" title="Restore Data" class="p-2.5 rounded-xl bg-slate-800/80 hover:bg-slate-700 text-slate-300 transition-all border border-slate-700/50 text-xs flex items-center gap-1.5 active:scale-90">
+        <button onclick="document.getElementById('import-file').click()" title="Restore Data" class="w-8 h-8 rounded-xl bg-slate-800/80 hover:bg-slate-700 text-slate-300 transition-all border border-slate-700/50 text-xs flex items-center justify-center active:scale-90">
           <i class="fa-solid fa-upload"></i>
         </button>
         <input type="file" id="import-file" class="hidden" accept=".json" onchange="importData(event)">
+        
+        <!-- DARK / LIGHT TOGGLE BUTTON -->
+        <button onclick="toggleTheme()" class="w-8 h-8 rounded-xl bg-slate-800/80 hover:bg-slate-700 text-amber-400 transition-all border border-slate-700/50 text-xs flex items-center justify-center active:scale-90 ml-1">
+          <i class="fa-solid fa-sun" id="theme-icon"></i>
+        </button>
       </div>
     </header>
 
-    <!-- Main Content Area -->
-    <main class="flex-1 px-4 py-4 space-y-5 overflow-y-auto custom-scrollbar">
+    <!-- SCROLLABLE TAB CONTENT -->
+    <main class="flex-1 px-4 py-3 space-y-4 overflow-y-auto custom-scrollbar">
 
-      <!-- Tab 1: Overview Dashboard -->
-      <section id="tab-overview" class="space-y-5">
+      <!-- ==================== TAB 1: OVERVIEW (HOME) ==================== -->
+      <section id="tab-overview" class="space-y-4">
         
-        <!-- Summary Cards Carousel -->
-        <div class="grid grid-cols-3 gap-2.5">
-          <div class="glass-card p-3 rounded-2xl border border-slate-800 flex flex-col items-center text-center">
-            <div class="w-8 h-8 rounded-xl bg-purple-500/10 text-purple-400 flex items-center justify-center mb-1 text-sm">
+        <!-- Dynamic Time & Greeting -->
+        <div class="flex items-center justify-between pt-1">
+          <div>
+            <h2 class="text-xl font-extrabold text-slate-100 dark:text-slate-100" id="dynamic-time-greeting">Good morning</h2>
+            <p class="text-xs text-slate-400 font-medium" id="greeting-subtext">August 2026</p>
+          </div>
+          <span class="text-xs font-semibold px-2.5 py-1 rounded-full bg-indigo-500/10 text-indigo-400 border border-indigo-500/20" id="active-currency-badge">$ USD</span>
+        </div>
+
+        <!-- 3 Summary Carousel Cards -->
+        <div class="grid grid-cols-3 gap-2 text-center">
+          <div class="app-card p-3 rounded-2xl flex flex-col items-center">
+            <div class="w-8 h-8 rounded-xl bg-indigo-500/10 text-indigo-400 flex items-center justify-center mb-1 text-xs">
               <i class="fa-solid fa-credit-card"></i>
             </div>
+            <span class="text-sm sm:text-base font-black text-slate-100 dark:text-slate-100" id="summary-subscriptions">$141.55</span>
             <span class="text-[10px] text-slate-400 font-medium">Subscriptions</span>
-            <span class="text-xs font-bold text-slate-100 mt-0.5" id="summary-subscriptions">$0.00</span>
           </div>
 
-          <div class="glass-card p-3 rounded-2xl border border-slate-800 flex flex-col items-center text-center">
-            <div class="w-8 h-8 rounded-xl bg-emerald-500/10 text-emerald-400 flex items-center justify-center mb-1 text-sm">
-              <i class="fa-solid fa-piggy-bank"></i>
+          <div class="app-card p-3 rounded-2xl flex flex-col items-center">
+            <div class="w-8 h-8 rounded-xl bg-emerald-500/10 text-emerald-400 flex items-center justify-center mb-1 text-xs">
+              <i class="fa-solid fa-wallet"></i>
             </div>
+            <span class="text-sm sm:text-base font-black text-slate-100 dark:text-slate-100" id="summary-saved">$2,300.00</span>
             <span class="text-[10px] text-slate-400 font-medium">Saved</span>
-            <span class="text-xs font-bold text-emerald-400 mt-0.5" id="summary-saved">$0.00</span>
           </div>
 
-          <div class="glass-card p-3 rounded-2xl border border-slate-800 flex flex-col items-center text-center">
-            <div class="w-8 h-8 rounded-xl bg-amber-500/10 text-amber-400 flex items-center justify-center mb-1 text-sm">
+          <div class="app-card p-3 rounded-2xl flex flex-col items-center">
+            <div class="w-8 h-8 rounded-xl bg-amber-500/10 text-amber-400 flex items-center justify-center mb-1 text-xs">
               <i class="fa-solid fa-receipt"></i>
             </div>
+            <span class="text-sm sm:text-base font-black text-slate-100 dark:text-slate-100" id="summary-spent">$162.30</span>
             <span class="text-[10px] text-slate-400 font-medium">Spent</span>
-            <span class="text-xs font-bold text-amber-400 mt-0.5" id="summary-spent">$0.00</span>
           </div>
         </div>
 
-        <!-- Monthly Budget Cap Progress -->
-        <div class="glass-card p-4 rounded-2xl border border-slate-800/80 space-y-2">
-          <div class="flex justify-between items-center text-xs">
-            <span class="font-semibold text-slate-300">Monthly Spending</span>
-            <span class="font-bold text-cyan-400" id="budget-ratio-text">$0.00 / $1,750.00</span>
-          </div>
-          <div class="w-full h-2.5 bg-slate-800 rounded-full overflow-hidden p-0.5">
-            <div id="budget-progress-bar" class="h-full bg-gradient-to-r from-cyan-400 to-purple-500 rounded-full transition-all duration-500" style="width: 0%"></div>
-          </div>
-        </div>
-
-        <!-- Main Action Buttons -->
-        <div class="grid grid-cols-2 gap-3">
-          <button onclick="openModal('modal-expense')" class="py-3 px-4 rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-bold text-xs shadow-lg glow-accent flex items-center justify-center gap-2 transition-all active:scale-95">
-            <i class="fa-solid fa-plus"></i> Add Expense
-          </button>
-          <button onclick="openModal('modal-subscription')" class="py-3 px-4 rounded-xl bg-slate-800 hover:bg-slate-700 text-cyan-400 font-bold text-xs border border-cyan-500/30 flex items-center justify-center gap-2 transition-all active:scale-95">
-            <i class="fa-solid fa-calendar-plus"></i> Add Subscription
-          </button>
-        </div>
-
-        <!-- Dashboard Subscriptions -->
-        <div class="space-y-3">
+        <!-- Monthly Subscriptions List with Renewal Countdown Pills -->
+        <div class="space-y-2.5">
           <div class="flex items-center justify-between">
-            <h3 class="text-sm font-bold text-slate-200">Monthly Subscriptions</h3>
-            <span class="text-xs font-bold text-indigo-400" id="subs-total-badge">$0.00/mo</span>
+            <h3 class="text-xs font-bold text-slate-300 dark:text-slate-300 uppercase tracking-wider">Monthly Subscriptions</h3>
+            <span class="text-xs font-bold text-indigo-400" id="home-subs-total">$141.55/mo</span>
           </div>
-          <div id="subscriptions-list" class="space-y-2">
+          <div id="home-subscriptions-list" class="space-y-2">
             <!-- Dynamically populated -->
           </div>
         </div>
 
-        <!-- Dashboard Savings Goals -->
-        <div class="space-y-3">
+        <!-- Savings Goals Preview -->
+        <div class="space-y-2.5">
           <div class="flex items-center justify-between">
-            <h3 class="text-sm font-bold text-slate-200">Savings Goals</h3>
-            <button onclick="openModal('modal-goal')" class="text-xs text-emerald-400 hover:underline font-semibold">+ New Goal</button>
+            <h3 class="text-xs font-bold text-slate-300 dark:text-slate-300 uppercase tracking-wider">Savings Goals</h3>
+            <span class="text-xs font-bold text-emerald-400" id="home-goals-ratio">$2,300.00 / $9,500.00</span>
           </div>
-          <div id="savings-goals-list" class="space-y-2.5">
+          <div id="home-goals-list" class="space-y-2">
             <!-- Dynamically populated -->
           </div>
         </div>
 
-        <!-- Dashboard Recent Transactions -->
-        <div class="space-y-3">
-          <div class="flex items-center justify-between">
-            <h3 class="text-sm font-bold text-slate-200">Recent Transactions</h3>
-            <span class="text-xs text-slate-400">Latest activity</span>
-          </div>
-          <div id="transactions-list" class="space-y-2">
-            <!-- Dynamically populated -->
-          </div>
-        </div>
       </section>
 
-      <!-- Tab 2: Full Subscriptions View -->
+      <!-- ==================== TAB 2: SUBSCRIPTIONS ==================== -->
       <section id="tab-subscriptions" class="space-y-4 hidden">
-        <div class="flex justify-between items-center">
-          <h2 class="text-base font-bold text-slate-100">Recurring Subscriptions</h2>
-          <button onclick="openModal('modal-subscription')" class="px-3 py-1.5 rounded-lg bg-purple-600 hover:bg-purple-500 text-white text-xs font-bold transition active:scale-95">
-            + Add New
+        <div class="flex items-center justify-between">
+          <h2 class="text-base font-bold text-slate-100 dark:text-slate-100">Subscriptions</h2>
+          <span class="text-xs font-bold px-3 py-1 rounded-full bg-purple-500/10 text-purple-300 border border-purple-500/20" id="subs-active-count">6 active</span>
+        </div>
+
+        <!-- Monthly Recurring Total Card -->
+        <div class="app-card rounded-2xl p-4 flex justify-between items-center">
+          <div>
+            <span class="text-[10px] text-slate-400 font-medium">Monthly recurring</span>
+            <div class="text-2xl font-black text-slate-100 dark:text-slate-100" id="subs-monthly-total">$141.55</div>
+          </div>
+          <button onclick="openModal('modal-subscription')" class="px-3.5 py-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs flex items-center gap-1.5 shadow-md active:scale-95 transition">
+            <i class="fa-solid fa-plus"></i> Add
           </button>
         </div>
+
         <div id="subscriptions-full-list" class="space-y-2.5">
           <!-- Dynamically populated -->
         </div>
-      </section>
 
-      <!-- Tab 3: Full Savings View -->
-      <section id="tab-savings" class="space-y-4 hidden">
-        <div class="flex justify-between items-center">
-          <h2 class="text-base font-bold text-slate-100">Savings & Funds</h2>
-          <button onclick="openModal('modal-goal')" class="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold transition active:scale-95">
-            + New Goal
+        <!-- Floating Action Button (+) for Subscriptions -->
+        <div class="fixed bottom-24 right-5 z-20">
+          <button onclick="openModal('modal-subscription')" class="w-13 h-13 p-4 rounded-full bg-indigo-500 hover:bg-indigo-600 text-white shadow-xl flex items-center justify-center text-lg active:scale-90 transition glow-accent">
+            <i class="fa-solid fa-plus"></i>
           </button>
         </div>
-        <div id="savings-full-list" class="space-y-3">
+      </section>
+
+      <!-- ==================== TAB 3: SAVINGS GOALS ==================== -->
+      <section id="tab-savings" class="space-y-4 hidden">
+        <div class="flex items-center justify-between">
+          <h2 class="text-base font-bold text-slate-100 dark:text-slate-100">Savings Goals</h2>
+          <button onclick="openModal('modal-goal')" class="text-xs text-emerald-400 font-bold hover:underline">+ New Goal</button>
+        </div>
+
+        <!-- Total Saved Hero Card -->
+        <div class="app-card rounded-2xl p-4 space-y-2">
+          <span class="text-[10px] text-slate-400 font-medium">Total saved</span>
+          <div class="text-2xl font-black text-slate-100 dark:text-slate-100" id="goals-total-saved">$2,300.00</div>
+          <div class="w-full h-2 bg-slate-800 rounded-full overflow-hidden">
+            <div id="goals-total-progress" class="h-full bg-emerald-400 rounded-full transition-all duration-500" style="width: 24%"></div>
+          </div>
+          <div class="flex justify-between text-[11px] text-slate-400 pt-0.5">
+            <span id="goals-target-text">Goal: $9,500.00</span>
+            <span id="goals-percent-text" class="text-emerald-400 font-bold">24%</span>
+          </div>
+        </div>
+
+        <div id="savings-full-list" class="space-y-2.5">
           <!-- Dynamically populated -->
+        </div>
+
+        <!-- Floating Action Button (+) for Savings -->
+        <div class="fixed bottom-24 right-5 z-20">
+          <button onclick="openModal('modal-goal')" class="w-13 h-13 p-4 rounded-full bg-emerald-500 hover:bg-emerald-600 text-slate-950 font-bold shadow-xl flex items-center justify-center text-lg active:scale-90 transition shadow-emerald-500/30">
+            <i class="fa-solid fa-plus"></i>
+          </button>
         </div>
       </section>
 
-      <!-- Tab 4: Spending Breakdown View -->
+      <!-- ==================== TAB 4: SPENDING BREAKDOWN ==================== -->
       <section id="tab-spending" class="space-y-4 hidden">
-        <h2 class="text-base font-bold text-slate-100">Category Breakdown</h2>
-        <div id="categories-breakdown-list" class="space-y-3">
-          <!-- Dynamically populated -->
+        <div class="flex items-center justify-between">
+          <h2 class="text-base font-bold text-slate-100 dark:text-slate-100">Spending</h2>
+          <div class="flex gap-2">
+            <button onclick="openModal('modal-category')" class="p-2 rounded-xl bg-slate-800 text-slate-300 text-xs"><i class="fa-solid fa-folder"></i></button>
+            <button onclick="openModal('modal-expense')" class="px-3 py-1.5 rounded-xl bg-indigo-600 text-white font-bold text-xs flex items-center gap-1">+ Expense</button>
+          </div>
+        </div>
+
+        <!-- Spending Summary Bar Card -->
+        <div class="app-card rounded-2xl p-4 space-y-3">
+          <div class="grid grid-cols-3 gap-2 text-center">
+            <div>
+              <span class="text-[10px] text-slate-400 font-medium block">Spent this month</span>
+              <span class="text-sm font-black text-slate-100 dark:text-slate-100" id="spending-tab-spent">$162.30</span>
+            </div>
+            <div>
+              <span class="text-[10px] text-slate-400 font-medium block">Budget</span>
+              <span class="text-sm font-black text-slate-300 dark:text-slate-300" id="spending-tab-budget">$1,750.00</span>
+            </div>
+            <div>
+              <span class="text-[10px] text-slate-400 font-medium block">Remaining</span>
+              <span class="text-sm font-black text-emerald-400" id="spending-tab-remaining">$1,587.70</span>
+            </div>
+          </div>
+          <div class="w-full h-2 bg-slate-800 rounded-full overflow-hidden">
+            <div id="spending-progress-bar" class="h-full bg-amber-400 rounded-full transition-all duration-500" style="width: 10%"></div>
+          </div>
+        </div>
+
+        <!-- Categories Carousel -->
+        <div class="space-y-2">
+          <div class="flex items-center justify-between">
+            <h3 class="text-xs font-bold text-slate-300 dark:text-slate-300 uppercase tracking-wider">Categories</h3>
+            <button onclick="openModal('modal-category')" class="text-[11px] text-emerald-400 font-bold hover:underline">+ New</button>
+          </div>
+          <div id="spending-categories-carousel" class="flex gap-2.5 overflow-x-auto pb-1 custom-scrollbar">
+            <!-- Dynamically populated -->
+          </div>
+        </div>
+
+        <!-- Transactions List -->
+        <div class="space-y-2.5">
+          <h3 class="text-xs font-bold text-slate-300 dark:text-slate-300 uppercase tracking-wider">Recent Transactions</h3>
+          <div id="spending-transactions-list" class="space-y-2">
+            <!-- Dynamically populated -->
+          </div>
         </div>
       </section>
+
+      <!-- ==================== TAB 5: SETTINGS & LEGAL ==================== -->
+      <section id="tab-settings" class="space-y-4 hidden">
+        <h2 class="text-base font-bold text-slate-100 dark:text-slate-100">Settings</h2>
+
+        <!-- Profile / Status Card -->
+        <div class="app-card rounded-2xl p-4 flex items-center justify-between">
+          <div class="flex items-center gap-3">
+            <div class="w-11 h-11 rounded-2xl bg-indigo-500/10 text-indigo-400 flex items-center justify-center text-lg">
+              <i class="fa-solid fa-user-shield"></i>
+            </div>
+            <div>
+              <h4 class="text-xs font-bold text-slate-100 dark:text-slate-100">Synth Labs Client</h4>
+              <p class="text-[10px] text-emerald-400 font-semibold">100% Offline & Private</p>
+            </div>
+          </div>
+          <span class="px-2.5 py-1 rounded-full bg-slate-800 text-slate-300 text-[10px] font-bold border border-slate-700">v1.1.0</span>
+        </div>
+
+        <!-- GENERAL SETTINGS -->
+        <div class="space-y-2">
+          <span class="text-[11px] font-bold text-slate-400 uppercase tracking-wider px-1">General</span>
+          <div class="app-card rounded-2xl overflow-hidden divide-y divide-slate-800/60 dark:divide-slate-800/60">
+            <!-- Currency Selector -->
+            <div onclick="cycleCurrency()" class="p-3.5 flex items-center justify-between active:bg-slate-800/40 cursor-pointer transition">
+              <div class="flex items-center gap-3">
+                <i class="fa-solid fa-coins text-emerald-400 text-sm w-5 text-center"></i>
+                <span class="text-xs font-semibold text-slate-200">Currency</span>
+              </div>
+              <div class="flex items-center gap-2">
+                <span class="text-xs font-bold text-slate-400" id="settings-current-currency">$ USD</span>
+                <i class="fa-solid fa-chevron-right text-[10px] text-slate-600"></i>
+              </div>
+            </div>
+
+            <!-- Appearance -->
+            <div onclick="toggleTheme()" class="p-3.5 flex items-center justify-between active:bg-slate-800/40 cursor-pointer transition">
+              <div class="flex items-center gap-3">
+                <i class="fa-solid fa-circle-half-stroke text-indigo-400 text-sm w-5 text-center"></i>
+                <span class="text-xs font-semibold text-slate-200">Appearance</span>
+              </div>
+              <div class="flex items-center gap-2">
+                <span class="text-xs font-bold text-slate-400" id="settings-theme-label">Dark</span>
+                <i class="fa-solid fa-chevron-right text-[10px] text-slate-600"></i>
+              </div>
+            </div>
+
+            <!-- Clear History / Reset Data -->
+            <div onclick="confirmResetData()" class="p-3.5 flex items-center justify-between active:bg-rose-500/10 cursor-pointer transition">
+              <div class="flex items-center gap-3">
+                <i class="fa-solid fa-clock-rotate-left text-rose-400 text-sm w-5 text-center"></i>
+                <span class="text-xs font-semibold text-rose-400">Clear Data & History</span>
+              </div>
+              <i class="fa-solid fa-chevron-right text-[10px] text-rose-400/50"></i>
+            </div>
+          </div>
+        </div>
+
+        <!-- ABOUT & LEGAL -->
+        <div class="space-y-2">
+          <span class="text-[11px] font-bold text-slate-400 uppercase tracking-wider px-1">About & Legal</span>
+          <div class="app-card rounded-2xl overflow-hidden divide-y divide-slate-800/60 dark:divide-slate-800/60">
+            <!-- Privacy Policy -->
+            <div onclick="openModal('modal-privacy')" class="p-3.5 flex items-center justify-between active:bg-slate-800/40 cursor-pointer transition">
+              <div class="flex items-center gap-3">
+                <i class="fa-solid fa-shield-halved text-cyan-400 text-sm w-5 text-center"></i>
+                <span class="text-xs font-semibold text-slate-200">Privacy Policy</span>
+              </div>
+              <i class="fa-solid fa-chevron-right text-[10px] text-slate-600"></i>
+            </div>
+
+            <!-- Terms of Service -->
+            <div onclick="openModal('modal-terms')" class="p-3.5 flex items-center justify-between active:bg-slate-800/40 cursor-pointer transition">
+              <div class="flex items-center gap-3">
+                <i class="fa-solid fa-file-contract text-amber-400 text-sm w-5 text-center"></i>
+                <span class="text-xs font-semibold text-slate-200">Terms of Service</span>
+              </div>
+              <i class="fa-solid fa-chevron-right text-[10px] text-slate-600"></i>
+            </div>
+
+            <!-- In-App Feedback -->
+            <div onclick="openModal('modal-feedback')" class="p-3.5 flex items-center justify-between active:bg-slate-800/40 cursor-pointer transition">
+              <div class="flex items-center gap-3">
+                <i class="fa-solid fa-message text-emerald-400 text-sm w-5 text-center"></i>
+                <span class="text-xs font-semibold text-slate-200">Leave Feedback</span>
+              </div>
+              <i class="fa-solid fa-chevron-right text-[10px] text-slate-600"></i>
+            </div>
+
+            <!-- Share App -->
+            <div onclick="shareApp()" class="p-3.5 flex items-center justify-between active:bg-slate-800/40 cursor-pointer transition">
+              <div class="flex items-center gap-3">
+                <i class="fa-solid fa-share-nodes text-purple-400 text-sm w-5 text-center"></i>
+                <span class="text-xs font-semibold text-slate-200">Share with Friends</span>
+              </div>
+              <i class="fa-solid fa-chevron-right text-[10px] text-slate-600"></i>
+            </div>
+          </div>
+        </div>
+
+        <div class="text-center pt-2 pb-2">
+          <p class="text-[10px] text-slate-500 font-semibold tracking-wider uppercase">Engineered by Synth Labs Studio</p>
+          <p class="text-[9px] text-slate-600 mt-0.5">synthlabsstudio.com • 0 API Charges</p>
+        </div>
+      </section>
+
+      <!-- ==================== ADMOB SMART BANNER CONTAINER ==================== -->
+      <div class="pt-2">
+        <div class="p-2.5 rounded-2xl bg-[#151C28]/80 dark:bg-[#151C28]/80 border border-slate-800 dark:border-slate-800 text-center app-card">
+          <div class="min-h-[50px] flex items-center justify-between px-3 bg-slate-950/40 rounded-xl border border-dashed border-slate-800">
+            <div class="flex items-center gap-2 text-xs text-slate-400 font-medium">
+              <i class="fa-solid fa-rectangle-ad text-cyan-400 text-sm"></i>
+              <span>Google AdMob Banner</span>
+            </div>
+            <span class="text-[9px] uppercase tracking-wider px-2 py-0.5 rounded bg-slate-800 text-slate-400 font-semibold" id="admob-status-label">Active / SDK Ready</span>
+          </div>
+        </div>
+      </div>
 
     </main>
 
-    <!-- Bottom Mobile Navigation Bar -->
-    <nav class="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-md bg-[#0B0F17]/95 backdrop-blur-lg border-t border-slate-800/80 px-4 py-2 flex justify-around items-center z-30 shadow-2xl">
-      <button onclick="switchTab('overview')" id="nav-overview" class="flex flex-col items-center gap-1 text-purple-400 transition-colors py-1 px-3">
-        <i class="fa-solid fa-house text-lg"></i>
-        <span class="text-[10px] font-medium">Overview</span>
+    <!-- BOTTOM 5-TAB MOBILE NAVIGATION BAR -->
+    <nav class="fixed bottom-0 left-0 right-0 w-full bg-[#0B0F17]/95 dark:bg-[#0B0F17]/95 backdrop-blur-lg border-t border-slate-800/80 px-2 py-1.5 flex justify-around items-center z-30 shadow-2xl safe-bottom" id="bottom-nav">
+      <button onclick="switchTab('overview')" id="nav-overview" class="flex flex-col items-center gap-1 text-indigo-400 transition-colors py-1 px-2.5">
+        <i class="fa-solid fa-house text-base"></i>
+        <span class="text-[9px] font-semibold">Home</span>
       </button>
 
-      <button onclick="switchTab('subscriptions')" id="nav-subscriptions" class="flex flex-col items-center gap-1 text-slate-500 hover:text-slate-300 transition-colors py-1 px-3">
-        <i class="fa-solid fa-repeat text-lg"></i>
-        <span class="text-[10px] font-medium">Subscriptions</span>
+      <button onclick="switchTab('subscriptions')" id="nav-subscriptions" class="flex flex-col items-center gap-1 text-slate-500 hover:text-slate-300 transition-colors py-1 px-2.5">
+        <i class="fa-solid fa-credit-card text-base"></i>
+        <span class="text-[9px] font-semibold">Subs</span>
       </button>
 
-      <button onclick="switchTab('savings')" id="nav-savings" class="flex flex-col items-center gap-1 text-slate-500 hover:text-slate-300 transition-colors py-1 px-3">
-        <i class="fa-solid fa-wallet text-lg"></i>
-        <span class="text-[10px] font-medium">Savings</span>
+      <button onclick="switchTab('savings')" id="nav-savings" class="flex flex-col items-center gap-1 text-slate-500 hover:text-slate-300 transition-colors py-1 px-2.5">
+        <i class="fa-solid fa-wallet text-base"></i>
+        <span class="text-[9px] font-semibold">Savings</span>
       </button>
 
-      <button onclick="switchTab('spending')" id="nav-spending" class="flex flex-col items-center gap-1 text-slate-500 hover:text-slate-300 transition-colors py-1 px-3">
-        <i class="fa-solid fa-chart-pie text-lg"></i>
-        <span class="text-[10px] font-medium">Spending</span>
+      <button onclick="switchTab('spending')" id="nav-spending" class="flex flex-col items-center gap-1 text-slate-500 hover:text-slate-300 transition-colors py-1 px-2.5">
+        <i class="fa-solid fa-chart-pie text-base"></i>
+        <span class="text-[9px] font-semibold">Spending</span>
+      </button>
+
+      <button onclick="switchTab('settings')" id="nav-settings" class="flex flex-col items-center gap-1 text-slate-500 hover:text-slate-300 transition-colors py-1 px-2.5">
+        <i class="fa-solid fa-gear text-base"></i>
+        <span class="text-[9px] font-semibold">Settings</span>
       </button>
     </nav>
 
-    <!-- Toast Notification Banner -->
+    <!-- TOAST NOTIFICATION BANNER -->
     <div id="toast" class="fixed top-5 left-1/2 -translate-x-1/2 z-50 pointer-events-none transition-all duration-300 opacity-0 transform -translate-y-4 max-w-xs w-full px-4">
-      <div id="toast-body" class="p-3.5 rounded-xl bg-slate-800 text-white text-xs font-semibold shadow-2xl border border-slate-700 flex items-center gap-2.5">
+      <div class="p-3.5 rounded-xl bg-slate-800 text-white text-xs font-semibold shadow-2xl border border-slate-700 flex items-center gap-2.5">
         <i id="toast-icon" class="fa-solid fa-circle-check text-emerald-400 text-sm"></i>
-        <span id="toast-message">Action successful</span>
+        <span id="toast-message">Saved successfully</span>
       </div>
     </div>
 
     <!-- MODAL 1: ADD EXPENSE -->
-    <div id="modal-expense" class="fixed inset-0 z-50 bg-black/75 backdrop-blur-sm hidden flex items-end sm:items-center justify-center p-0 sm:p-4" onclick="closeModal('modal-expense')">
-      <div class="w-full max-w-md bg-[#151C28] border-t sm:border border-slate-800 rounded-t-3xl sm:rounded-2xl p-5 space-y-4 max-h-[85vh] overflow-y-auto" onclick="event.stopPropagation()">
-        
+    <div id="modal-expense" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm hidden items-end sm:items-center justify-center p-0 sm:p-4">
+      <div class="w-full max-w-md bg-[#151C28] border-t sm:border border-slate-800 rounded-t-3xl sm:rounded-2xl p-5 space-y-4 max-h-[88vh] overflow-y-auto custom-scrollbar">
         <div class="flex justify-between items-center pb-2 border-b border-slate-800">
           <h3 class="text-base font-bold text-slate-100 flex items-center gap-2">
-            <i class="fa-solid fa-circle-plus text-purple-400"></i> Add Expense
+            <i class="fa-solid fa-circle-plus text-indigo-400"></i> Add Expense
           </h3>
           <button onclick="closeModal('modal-expense')" class="w-7 h-7 rounded-full bg-slate-800 text-slate-400 hover:text-white flex items-center justify-center text-xs">
             <i class="fa-solid fa-xmark"></i>
           </button>
         </div>
 
-        <form onsubmit="handleAddExpense(event)" class="space-y-4">
-          <!-- Amount Input -->
+        <form onsubmit="handleAddExpense(event)" class="space-y-3.5">
           <div>
-            <label class="block text-xs font-semibold text-slate-400 mb-1">Amount ($)</label>
+            <label class="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1">Amount</label>
             <input type="number" id="exp-amount" step="0.01" min="0.01" placeholder="0.00" required 
-              class="w-full bg-slate-900 border border-slate-700/80 rounded-xl px-3.5 py-3 text-lg font-bold text-white placeholder-slate-600 focus:outline-none focus:border-purple-500 transition">
+              class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3.5 py-2.5 text-lg font-bold text-white placeholder-slate-600 focus:outline-none focus:border-indigo-500">
           </div>
 
-          <!-- Category Selection -->
           <div>
-            <label class="block text-xs font-semibold text-slate-400 mb-1.5">Category</label>
-            <div class="grid grid-cols-3 gap-2" id="exp-category-selector">
-              <button type="button" onclick="selectExpCategory('Food')" class="cat-btn py-2 px-3 rounded-xl border border-purple-500/50 bg-purple-500/10 text-purple-300 text-xs font-semibold flex items-center justify-center gap-1.5">
-                <i class="fa-solid fa-utensils"></i> Food
-              </button>
-              <button type="button" onclick="selectExpCategory('Transport')" class="cat-btn py-2 px-3 rounded-xl border border-slate-800 bg-slate-900 text-slate-400 text-xs font-semibold flex items-center justify-center gap-1.5">
-                <i class="fa-solid fa-bus"></i> Transport
-              </button>
-              <button type="button" onclick="selectExpCategory('Entertainment')" class="cat-btn py-2 px-3 rounded-xl border border-slate-800 bg-slate-900 text-slate-400 text-xs font-semibold flex items-center justify-center gap-1.5">
-                <i class="fa-solid fa-gamepad"></i> Fun
-              </button>
-            </div>
-            <input type="hidden" id="exp-category" value="Food">
+            <label class="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1">Category</label>
+            <select id="exp-category" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2.5 text-xs text-white focus:outline-none focus:border-indigo-500">
+              <!-- Populated dynamically -->
+            </select>
           </div>
 
-          <!-- Note/Title -->
           <div>
-            <label class="block text-xs font-semibold text-slate-400 mb-1">Description / Note</label>
-            <input type="text" id="exp-note" placeholder="What was this for?" required
-              class="w-full bg-slate-900 border border-slate-700/80 rounded-xl px-3.5 py-2.5 text-xs text-white placeholder-slate-600 focus:outline-none focus:border-purple-500 transition">
+            <label class="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1">Description / Note</label>
+            <input type="text" id="exp-note" placeholder="What was this for? (e.g. Groceries, Ride)" required
+              class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3.5 py-2.5 text-xs text-white placeholder-slate-600 focus:outline-none focus:border-indigo-500">
           </div>
 
-          <!-- Date -->
           <div>
-            <label class="block text-xs font-semibold text-slate-400 mb-1">Date</label>
+            <label class="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1">Date</label>
             <input type="date" id="exp-date" required
-              class="w-full bg-slate-900 border border-slate-700/80 rounded-xl px-3.5 py-2.5 text-xs text-white focus:outline-none focus:border-purple-500 transition">
+              class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3.5 py-2 text-xs text-white focus:outline-none focus:border-indigo-500">
           </div>
 
-          <!-- Action Buttons with High-Contrast Text -->
           <div class="grid grid-cols-2 gap-3 pt-2">
-            <button type="button" onclick="closeModal('modal-expense')" class="py-3 px-4 rounded-xl bg-slate-800 text-slate-300 font-bold text-xs hover:bg-slate-700 transition">
-              Cancel
-            </button>
-            <button type="submit" class="py-3 px-4 rounded-xl bg-gradient-to-r from-purple-500 to-cyan-400 text-[#090D16] font-extrabold text-xs shadow-lg glow-cyan hover:opacity-95 transition active:scale-95">
-              + Save Expense
-            </button>
+            <button type="button" onclick="closeModal('modal-expense')" class="py-3 px-4 rounded-xl bg-slate-800 text-slate-300 font-bold text-xs hover:bg-slate-700">Cancel</button>
+            <button type="submit" class="py-3 px-4 rounded-xl bg-indigo-500 hover:bg-indigo-600 text-white font-extrabold text-xs shadow-lg active:scale-95">Save Expense</button>
           </div>
         </form>
-
       </div>
     </div>
 
-    <!-- MODAL 2: ADD SUBSCRIPTION -->
-    <div id="modal-subscription" class="fixed inset-0 z-50 bg-black/75 backdrop-blur-sm hidden flex items-end sm:items-center justify-center p-0 sm:p-4" onclick="closeModal('modal-subscription')">
-      <div class="w-full max-w-md bg-[#151C28] border-t sm:border border-slate-800 rounded-t-3xl sm:rounded-2xl p-5 space-y-4 max-h-[85vh] overflow-y-auto" onclick="event.stopPropagation()">
-        
+    <!-- MODAL 2: ADD / EDIT SUBSCRIPTION -->
+    <div id="modal-subscription" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm hidden items-end sm:items-center justify-center p-0 sm:p-4">
+      <div class="w-full max-w-md bg-[#151C28] border-t sm:border border-slate-800 rounded-t-3xl sm:rounded-2xl p-5 space-y-4 max-h-[90vh] overflow-y-auto custom-scrollbar">
         <div class="flex justify-between items-center pb-2 border-b border-slate-800">
           <h3 class="text-base font-bold text-slate-100 flex items-center gap-2">
-            <i class="fa-solid fa-repeat text-cyan-400"></i> New Subscription
+            <i class="fa-solid fa-repeat text-indigo-400"></i> <span id="sub-modal-title">Edit Subscription</span>
           </h3>
           <button onclick="closeModal('modal-subscription')" class="w-7 h-7 rounded-full bg-slate-800 text-slate-400 hover:text-white flex items-center justify-center text-xs">
             <i class="fa-solid fa-xmark"></i>
           </button>
         </div>
 
-        <form onsubmit="handleAddSubscription(event)" class="space-y-4">
+        <form onsubmit="handleSaveSubscription(event)" class="space-y-3">
+          <input type="hidden" id="sub-edit-id" value="">
+
           <div>
-            <label class="block text-xs font-semibold text-slate-400 mb-1">Service Name</label>
-            <input type="text" id="sub-name" placeholder="Netflix, Gym, Spotify..." required 
-              class="w-full bg-slate-900 border border-slate-700/80 rounded-xl px-3.5 py-2.5 text-xs text-white placeholder-slate-600 focus:outline-none focus:border-cyan-500">
+            <label class="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1">Name</label>
+            <input type="text" id="sub-name" placeholder="Netflix, Gym, Cloud Storage..." required 
+              class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3.5 py-2.5 text-xs text-white placeholder-slate-600 focus:outline-none focus:border-indigo-500">
           </div>
 
           <div>
-            <label class="block text-xs font-semibold text-slate-400 mb-1">Monthly Cost ($)</label>
-            <input type="number" id="sub-cost" step="0.01" min="0.01" placeholder="14.99" required 
-              class="w-full bg-slate-900 border border-slate-700/80 rounded-xl px-3.5 py-2.5 text-sm font-bold text-white placeholder-slate-600 focus:outline-none focus:border-cyan-500">
+            <label class="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1">Amount</label>
+            <input type="number" id="sub-cost" step="0.01" min="0.01" placeholder="15.99" required 
+              class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3.5 py-2 text-sm font-bold text-white placeholder-slate-600 focus:outline-none focus:border-indigo-500">
+          </div>
+
+          <!-- Frequency Toggle -->
+          <div>
+            <label class="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1">Frequency</label>
+            <div class="grid grid-cols-3 gap-1 bg-slate-900 p-1 rounded-xl border border-slate-700">
+              <button type="button" onclick="setSubFrequency('weekly')" id="freq-weekly" class="py-1.5 text-xs font-semibold rounded-lg text-slate-400">Weekly</button>
+              <button type="button" onclick="setSubFrequency('monthly')" id="freq-monthly" class="py-1.5 text-xs font-bold rounded-lg bg-indigo-600 text-white">Monthly</button>
+              <button type="button" onclick="setSubFrequency('yearly')" id="freq-yearly" class="py-1.5 text-xs font-semibold rounded-lg text-slate-400">Yearly</button>
+            </div>
+            <input type="hidden" id="sub-frequency" value="monthly">
           </div>
 
           <div>
-            <label class="block text-xs font-semibold text-slate-400 mb-1">Due Day (Day of Month)</label>
-            <input type="number" id="sub-day" min="1" max="31" placeholder="15" required 
-              class="w-full bg-slate-900 border border-slate-700/80 rounded-xl px-3.5 py-2.5 text-xs text-white placeholder-slate-600 focus:outline-none focus:border-cyan-500">
+            <label class="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1">Category</label>
+            <input type="text" id="sub-cat" placeholder="Entertainment, Health, Tech..." required 
+              class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3.5 py-2 text-xs text-white placeholder-slate-600 focus:outline-none focus:border-indigo-500">
+          </div>
+
+          <div>
+            <label class="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1">Next Renewal</label>
+            <input type="date" id="sub-renewal-date" required
+              class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3.5 py-2 text-xs text-white focus:outline-none focus:border-indigo-500">
+          </div>
+
+          <div>
+            <label class="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1">Icon</label>
+            <div class="flex gap-2 overflow-x-auto pb-1 custom-scrollbar" id="sub-icon-picker"></div>
+            <input type="hidden" id="sub-selected-icon" value="fa-film">
+          </div>
+
+          <div>
+            <label class="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1">Color</label>
+            <div class="flex gap-2 overflow-x-auto pb-1 custom-scrollbar" id="sub-color-picker"></div>
+            <input type="hidden" id="sub-selected-color" value="#6366F1">
           </div>
 
           <div class="grid grid-cols-2 gap-3 pt-2">
-            <button type="button" onclick="closeModal('modal-subscription')" class="py-3 px-4 rounded-xl bg-slate-800 text-slate-300 font-bold text-xs hover:bg-slate-700">
-              Cancel
-            </button>
-            <button type="submit" class="py-3 px-4 rounded-xl bg-gradient-to-r from-cyan-400 to-emerald-400 text-[#090D16] font-extrabold text-xs shadow-lg glow-cyan hover:opacity-95 active:scale-95">
-              + Save Subscription
-            </button>
+            <button type="button" onclick="closeModal('modal-subscription')" class="py-3 px-4 rounded-xl bg-slate-800 text-slate-300 font-bold text-xs hover:bg-slate-700">Cancel</button>
+            <button type="submit" class="py-3 px-4 rounded-xl bg-indigo-500 hover:bg-indigo-600 text-white font-extrabold text-xs shadow-lg active:scale-95">Save</button>
           </div>
         </form>
-
       </div>
     </div>
 
-    <!-- MODAL 3: ADD SAVINGS GOAL -->
-    <div id="modal-goal" class="fixed inset-0 z-50 bg-black/75 backdrop-blur-sm hidden flex items-end sm:items-center justify-center p-0 sm:p-4" onclick="closeModal('modal-goal')">
-      <div class="w-full max-w-md bg-[#151C28] border-t sm:border border-slate-800 rounded-t-3xl sm:rounded-2xl p-5 space-y-4 max-h-[85vh] overflow-y-auto" onclick="event.stopPropagation()">
-        
+    <!-- MODAL 3: NEW CATEGORY -->
+    <div id="modal-category" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm hidden items-end sm:items-center justify-center p-0 sm:p-4">
+      <div class="w-full max-w-md bg-[#151C28] border-t sm:border border-slate-800 rounded-t-3xl sm:rounded-2xl p-5 space-y-4 max-h-[90vh] overflow-y-auto custom-scrollbar">
+        <div class="flex justify-between items-center pb-2 border-b border-slate-800">
+          <h3 class="text-base font-bold text-slate-100 flex items-center gap-2">
+            <i class="fa-solid fa-folder-plus text-emerald-400"></i> New Category
+          </h3>
+          <button onclick="closeModal('modal-category')" class="w-7 h-7 rounded-full bg-slate-800 text-slate-400 hover:text-white flex items-center justify-center text-xs">
+            <i class="fa-solid fa-xmark"></i>
+          </button>
+        </div>
+
+        <form onsubmit="handleCreateCategory(event)" class="space-y-3">
+          <div>
+            <label class="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1">Category name</label>
+            <input type="text" id="cat-name" placeholder="Food, Transport, Utilities..." required 
+              class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3.5 py-2.5 text-xs text-white placeholder-slate-600 focus:outline-none focus:border-emerald-500">
+          </div>
+
+          <div>
+            <label class="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1">Monthly budget</label>
+            <input type="number" id="cat-budget" step="1" min="1" placeholder="0.00" required 
+              class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3.5 py-2.5 text-sm font-bold text-white placeholder-slate-600 focus:outline-none focus:border-emerald-500">
+          </div>
+
+          <div>
+            <label class="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1">Icon</label>
+            <div class="flex gap-2 overflow-x-auto pb-1 custom-scrollbar" id="cat-icon-picker"></div>
+            <input type="hidden" id="cat-selected-icon" value="fa-utensils">
+          </div>
+
+          <div>
+            <label class="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1">Color</label>
+            <div class="flex gap-2 overflow-x-auto pb-1 custom-scrollbar" id="cat-color-picker"></div>
+            <input type="hidden" id="cat-selected-color" value="#F59E0B">
+          </div>
+
+          <div class="grid grid-cols-2 gap-3 pt-2">
+            <button type="button" onclick="closeModal('modal-category')" class="py-3 px-4 rounded-xl bg-slate-800 text-slate-300 font-bold text-xs hover:bg-slate-700">Cancel</button>
+            <button type="submit" class="py-3 px-4 rounded-xl bg-indigo-500 hover:bg-indigo-600 text-white font-extrabold text-xs shadow-lg active:scale-95">Create</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- MODAL 4: NEW SAVINGS GOAL -->
+    <div id="modal-goal" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm hidden items-end sm:items-center justify-center p-0 sm:p-4">
+      <div class="w-full max-w-md bg-[#151C28] border-t sm:border border-slate-800 rounded-t-3xl sm:rounded-2xl p-5 space-y-4 max-h-[90vh] overflow-y-auto custom-scrollbar">
         <div class="flex justify-between items-center pb-2 border-b border-slate-800">
           <h3 class="text-base font-bold text-slate-100 flex items-center gap-2">
             <i class="fa-solid fa-bullseye text-emerald-400"></i> New Savings Goal
@@ -374,396 +626,92 @@
           </button>
         </div>
 
-        <form onsubmit="handleAddGoal(event)" class="space-y-4">
+        <form onsubmit="handleCreateGoal(event)" class="space-y-3">
           <div>
-            <label class="block text-xs font-semibold text-slate-400 mb-1">Goal Title</label>
-            <input type="text" id="goal-title" placeholder="Emergency Fund, New Laptop..." required 
-              class="w-full bg-slate-900 border border-slate-700/80 rounded-xl px-3.5 py-2.5 text-xs text-white placeholder-slate-600 focus:outline-none focus:border-emerald-500">
+            <label class="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1">Goal name</label>
+            <input type="text" id="goal-name" placeholder="Emergency fund, Vacation..." required 
+              class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3.5 py-2.5 text-xs text-white placeholder-slate-600 focus:outline-none focus:border-emerald-500">
           </div>
 
-          <div class="grid grid-cols-2 gap-3">
+          <div class="grid grid-cols-2 gap-2.5">
             <div>
-              <label class="block text-xs font-semibold text-slate-400 mb-1">Saved So Far ($)</label>
-              <input type="number" id="goal-saved" step="0.01" min="0" placeholder="0.00" required 
-                class="w-full bg-slate-900 border border-slate-700/80 rounded-xl px-3.5 py-2.5 text-xs font-bold text-white placeholder-slate-600 focus:outline-none focus:border-emerald-500">
+              <label class="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1">Target amount</label>
+              <input type="number" id="goal-target" step="1" min="1" placeholder="0.00" required 
+                class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs font-bold text-white placeholder-slate-600 focus:outline-none focus:border-emerald-500">
             </div>
             <div>
-              <label class="block text-xs font-semibold text-slate-400 mb-1">Target Amount ($)</label>
-              <input type="number" id="goal-target" step="0.01" min="1" placeholder="1000.00" required 
-                class="w-full bg-slate-900 border border-slate-700/80 rounded-xl px-3.5 py-2.5 text-xs font-bold text-white placeholder-slate-600 focus:outline-none focus:border-emerald-500">
+              <label class="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1">Current savings</label>
+              <input type="number" id="goal-current" step="1" min="0" placeholder="0.00" required 
+                class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs font-bold text-white placeholder-slate-600 focus:outline-none focus:border-emerald-500">
             </div>
+          </div>
+
+          <div>
+            <label class="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1">Deadline (optional)</label>
+            <input type="date" id="goal-date" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3.5 py-2 text-xs text-white focus:outline-none focus:border-emerald-500">
+          </div>
+
+          <div>
+            <label class="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1">Icon</label>
+            <div class="flex gap-2 overflow-x-auto pb-1 custom-scrollbar" id="goal-icon-picker"></div>
+            <input type="hidden" id="goal-selected-icon" value="fa-shield-halved">
+          </div>
+
+          <div>
+            <label class="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1">Color</label>
+            <div class="flex gap-2 overflow-x-auto pb-1 custom-scrollbar" id="goal-color-picker"></div>
+            <input type="hidden" id="goal-selected-color" value="#10B981">
           </div>
 
           <div class="grid grid-cols-2 gap-3 pt-2">
-            <button type="button" onclick="closeModal('modal-goal')" class="py-3 px-4 rounded-xl bg-slate-800 text-slate-300 font-bold text-xs hover:bg-slate-700">
-              Cancel
-            </button>
-            <button type="submit" class="py-3 px-4 rounded-xl bg-gradient-to-r from-emerald-400 to-teal-400 text-[#090D16] font-extrabold text-xs shadow-lg hover:opacity-95 active:scale-95">
-              + Create Goal
-            </button>
+            <button type="button" onclick="closeModal('modal-goal')" class="py-3 px-4 rounded-xl bg-slate-800 text-slate-300 font-bold text-xs hover:bg-slate-700">Cancel</button>
+            <button type="submit" class="py-3 px-4 rounded-xl bg-indigo-500 hover:bg-indigo-600 text-white font-extrabold text-xs shadow-lg active:scale-95">Create</button>
           </div>
         </form>
-
       </div>
     </div>
 
-  </div>
-
-  <!-- JavaScript Engine -->
-  <script>
-    const defaultData = {
-      budgetCap: 1750.00,
-      subscriptions: [
-        { id: '1', name: 'Gym Membership', cost: 45.00, day: 25, icon: 'fa-dumbbell', color: 'bg-emerald-500/10 text-emerald-400' },
-        { id: '2', name: 'Netflix 4K', cost: 15.99, day: 29, icon: 'fa-tv', color: 'bg-rose-500/10 text-rose-400' },
-        { id: '3', name: 'Cloud Storage', cost: 2.99, day: 1, icon: 'fa-cloud', color: 'bg-cyan-500/10 text-cyan-400' },
-        { id: '4', name: 'Spotify Premium', cost: 10.99, day: 5, icon: 'fa-music', color: 'bg-green-500/10 text-green-400' }
-      ],
-      goals: [
-        { id: '1', title: 'Emergency Fund', saved: 2300.00, target: 9500.00, color: 'from-emerald-400 to-teal-500' },
-        { id: '2', title: 'New Laptop', saved: 300.00, target: 1500.00, color: 'from-purple-400 to-indigo-500' }
-      ],
-      transactions: [
-        { id: '1', note: 'Weekly groceries', amount: 85.50, category: 'Food', date: '2026-08-24', icon: 'fa-utensils', color: 'text-amber-400' },
-        { id: '2', note: 'Ride share to work', amount: 12.30, category: 'Transport', date: '2026-08-24', icon: 'fa-bus', color: 'text-purple-400' },
-        { id: '3', note: 'Coffee & Snacks', amount: 4.50, category: 'Food', date: '2026-08-23', icon: 'fa-mug-hot', color: 'text-amber-400' }
-      ],
-      categories: [
-        { name: 'Food', cap: 600, icon: 'fa-utensils', color: 'bg-amber-500' },
-        { name: 'Transport', cap: 200, icon: 'fa-bus', color: 'bg-purple-500' },
-        { name: 'Fun', cap: 150, icon: 'fa-gamepad', color: 'bg-pink-500' },
-        { name: 'Shopping', cap: 300, icon: 'fa-bag-shopping', color: 'bg-cyan-500' }
-      ]
-    };
-
-    let state = JSON.parse(localStorage.getItem('synthbudget_db')) || defaultData;
-
-    function saveState() {
-      localStorage.setItem('synthbudget_db', JSON.stringify(state));
-      renderApp();
-    }
-
-    window.onload = function() {
-      const today = new Date();
-      document.getElementById('current-date-display').innerText = today.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
-      document.getElementById('exp-date').valueAsDate = today;
-      renderApp();
-    };
-
-    function switchTab(tabName) {
-      ['overview', 'subscriptions', 'savings', 'spending'].forEach(tab => {
-        document.getElementById(`tab-${tab}`).classList.add('hidden');
-        const navBtn = document.getElementById(`nav-${tab}`);
-        navBtn.classList.remove('text-purple-400');
-        navBtn.classList.add('text-slate-500');
-      });
-
-      document.getElementById(`tab-${tabName}`).classList.remove('hidden');
-      const activeNav = document.getElementById(`nav-${tabName}`);
-      activeNav.classList.remove('text-slate-500');
-      activeNav.classList.add('text-purple-400');
-
-      if (tabName === 'subscriptions') renderSubscriptionsFull();
-      if (tabName === 'savings') renderSavingsFull();
-      if (tabName === 'spending') renderCategoriesBreakdown();
-    }
-
-    function renderApp() {
-      const totalSubs = state.subscriptions.reduce((sum, item) => sum + Number(item.cost), 0);
-      const totalSaved = state.goals.reduce((sum, item) => sum + Number(item.saved), 0);
-      const totalSpent = state.transactions.reduce((sum, item) => sum + Number(item.amount), 0);
-
-      document.getElementById('summary-subscriptions').innerText = `$${totalSubs.toFixed(2)}`;
-      document.getElementById('summary-saved').innerText = `$${totalSaved.toFixed(2)}`;
-      document.getElementById('summary-spent').innerText = `$${totalSpent.toFixed(2)}`;
-      document.getElementById('subs-total-badge').innerText = `$${totalSubs.toFixed(2)}/mo`;
-
-      const budgetPct = Math.min(100, Math.round((totalSpent / state.budgetCap) * 100));
-      document.getElementById('budget-ratio-text').innerText = `$${totalSpent.toFixed(2)} / $${state.budgetCap.toFixed(2)}`;
-      document.getElementById('budget-progress-bar').style.width = `${budgetPct}%`;
-
-      const subsContainer = document.getElementById('subscriptions-list');
-      subsContainer.innerHTML = state.subscriptions.map(sub => `
-        <div class="glass-card p-3 rounded-xl flex items-center justify-between border border-slate-800">
-          <div class="flex items-center gap-3">
-            <div class="w-9 h-9 rounded-xl ${sub.color || 'bg-purple-500/10 text-purple-400'} flex items-center justify-center text-sm">
-              <i class="fa-solid ${sub.icon}"></i>
-            </div>
-            <div>
-              <h4 class="text-xs font-bold text-slate-100">${sub.name}</h4>
-              <p class="text-[10px] text-slate-400">Due day ${sub.day} of month</p>
-            </div>
-          </div>
-          <div class="text-right">
-            <span class="text-xs font-bold text-slate-200">$${Number(sub.cost).toFixed(2)}</span>
-            <span class="block text-[9px] px-2 py-0.5 rounded-full bg-purple-500/10 text-purple-300 font-semibold mt-0.5">Monthly</span>
-          </div>
+    <!-- MODAL 5: PRIVACY POLICY -->
+    <div id="modal-privacy" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm hidden items-center justify-center p-4">
+      <div class="w-full max-w-md bg-[#151C28] border border-slate-800 rounded-2xl p-5 space-y-3 max-h-[80vh] overflow-y-auto custom-scrollbar">
+        <div class="flex justify-between items-center pb-2 border-b border-slate-800">
+          <h3 class="text-sm font-bold text-white"><i class="fa-solid fa-shield-halved text-cyan-400 mr-2"></i> Privacy Policy</h3>
+          <button onclick="closeModal('modal-privacy')" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark"></i></button>
         </div>
-      `).join('');
-
-      const goalsContainer = document.getElementById('savings-goals-list');
-      goalsContainer.innerHTML = state.goals.map(goal => {
-        const pct = Math.min(100, Math.round((goal.saved / goal.target) * 100));
-        return `
-          <div class="glass-card p-3 rounded-xl space-y-2 border border-slate-800">
-            <div class="flex justify-between items-center text-xs">
-              <span class="font-bold text-slate-200">${goal.title}</span>
-              <span class="font-bold text-emerald-400">$${Number(goal.saved).toFixed(2)} / $${Number(goal.target).toFixed(2)}</span>
-            </div>
-            <div class="w-full h-2 bg-slate-800 rounded-full overflow-hidden">
-              <div class="h-full bg-gradient-to-r ${goal.color || 'from-emerald-400 to-teal-500'} rounded-full transition-all duration-500" style="width: ${pct}%"></div>
-            </div>
-          </div>
-        `;
-      }).join('');
-
-      const txContainer = document.getElementById('transactions-list');
-      txContainer.innerHTML = state.transactions.map(tx => `
-        <div class="glass-card p-3 rounded-xl flex items-center justify-between border border-slate-800">
-          <div class="flex items-center gap-3">
-            <div class="w-8 h-8 rounded-xl bg-slate-800 flex items-center justify-center text-xs text-purple-400">
-              <i class="fa-solid ${tx.icon || 'fa-receipt'}"></i>
-            </div>
-            <div>
-              <h4 class="text-xs font-bold text-slate-200">${tx.note}</h4>
-              <p class="text-[10px] text-slate-400">${tx.date} • ${tx.category}</p>
-            </div>
-          </div>
-          <span class="text-xs font-extrabold text-rose-400">-$${Number(tx.amount).toFixed(2)}</span>
+        <div class="text-xs text-slate-300 space-y-2 leading-relaxed">
+          <p><strong>SynthBudget</strong> is an offline-first personal finance tracker provided by <strong>Synth Labs Studio</strong>.</p>
+          <p><strong>1. Zero Data Collection:</strong> All records, budgets, and savings goals remain exclusively on your local device. No personal data is transmitted to external servers.</p>
+          <p><strong>2. Google AdMob:</strong> The app displays non-personalized banner advertisements through Google Mobile Ads SDK in full compliance with Google Play Developer policies.</p>
+          <p><strong>3. Contact:</strong> For inquiries, contact us at <code>sancares87@gmail.com</code>.</p>
         </div>
-      `).join('');
-    }
+        <button onclick="closeModal('modal-privacy')" class="w-full py-2.5 rounded-xl bg-indigo-600 text-white font-bold text-xs">Close</button>
+      </div>
+    </div>
 
-    function openModal(id) {
-      document.getElementById(id).classList.remove('hidden');
-    }
-
-    function closeModal(id) {
-      document.getElementById(id).classList.add('hidden');
-    }
-
-    function selectExpCategory(cat) {
-      document.getElementById('exp-category').value = cat;
-      const buttons = document.querySelectorAll('.cat-btn');
-      buttons.forEach(btn => {
-        btn.classList.remove('border-purple-500/50', 'bg-purple-500/10', 'text-purple-300');
-        btn.classList.add('border-slate-800', 'bg-slate-900', 'text-slate-400');
-      });
-      event.currentTarget.classList.remove('border-slate-800', 'bg-slate-900', 'text-slate-400');
-      event.currentTarget.classList.add('border-purple-500/50', 'bg-purple-500/10', 'text-purple-300');
-    }
-
-    function handleAddExpense(e) {
-      e.preventDefault();
-      const amount = parseFloat(document.getElementById('exp-amount').value);
-      const note = document.getElementById('exp-note').value.trim();
-      const category = document.getElementById('exp-category').value;
-      const date = document.getElementById('exp-date').value;
-
-      if (!amount || amount <= 0) {
-        showToast('Please enter an amount greater than $0.00', 'fa-triangle-exclamation', 'text-amber-400');
-        return;
-      }
-
-      state.transactions.unshift({
-        id: Date.now().toString(),
-        note,
-        amount,
-        category,
-        date,
-        icon: category === 'Food' ? 'fa-utensils' : category === 'Transport' ? 'fa-bus' : 'fa-gamepad'
-      });
-
-      saveState();
-      closeModal('modal-expense');
-      e.target.reset();
-      showToast('Expense added successfully!');
-    }
-
-    function handleAddSubscription(e) {
-      e.preventDefault();
-      const name = document.getElementById('sub-name').value.trim();
-      const cost = parseFloat(document.getElementById('sub-cost').value);
-      const day = parseInt(document.getElementById('sub-day').value);
-
-      if (!cost || cost <= 0) {
-        showToast('Please enter a valid monthly cost', 'fa-triangle-exclamation', 'text-amber-400');
-        return;
-      }
-
-      state.subscriptions.push({
-        id: Date.now().toString(),
-        name,
-        cost,
-        day,
-        icon: 'fa-repeat',
-        color: 'bg-cyan-500/10 text-cyan-400'
-      });
-
-      saveState();
-      closeModal('modal-subscription');
-      e.target.reset();
-      showToast('Subscription saved!');
-    }
-
-    function handleAddGoal(e) {
-      e.preventDefault();
-      const title = document.getElementById('goal-title').value.trim();
-      const saved = parseFloat(document.getElementById('goal-saved').value) || 0;
-      const target = parseFloat(document.getElementById('goal-target').value);
-
-      if (!target || target <= 0) {
-        showToast('Target amount must be greater than $0.00', 'fa-triangle-exclamation', 'text-amber-400');
-        return;
-      }
-
-      state.goals.push({
-        id: Date.now().toString(),
-        title,
-        saved,
-        target,
-        color: 'from-purple-400 to-cyan-500'
-      });
-
-      saveState();
-      closeModal('modal-goal');
-      e.target.reset();
-      showToast('New goal created!');
-    }
-
-    function renderSubscriptionsFull() {
-      const container = document.getElementById('subscriptions-full-list');
-      container.innerHTML = state.subscriptions.map(sub => `
-        <div class="glass-card p-4 rounded-xl flex items-center justify-between border border-slate-800">
-          <div class="flex items-center gap-3">
-            <div class="w-10 h-10 rounded-xl ${sub.color} flex items-center justify-center text-base">
-              <i class="fa-solid ${sub.icon}"></i>
-            </div>
-            <div>
-              <h4 class="text-sm font-bold text-slate-100">${sub.name}</h4>
-              <p class="text-xs text-slate-400">Repeats monthly on day ${sub.day}</p>
-            </div>
-          </div>
-          <div class="flex items-center gap-3">
-            <span class="text-sm font-extrabold text-cyan-400">$${Number(sub.cost).toFixed(2)}</span>
-            <button onclick="deleteSubscription('${sub.id}')" class="text-slate-500 hover:text-rose-400 text-xs p-1">
-              <i class="fa-solid fa-trash"></i>
-            </button>
-          </div>
+    <!-- MODAL 6: TERMS OF SERVICE -->
+    <div id="modal-terms" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm hidden items-center justify-center p-4">
+      <div class="w-full max-w-md bg-[#151C28] border border-slate-800 rounded-2xl p-5 space-y-3 max-h-[80vh] overflow-y-auto custom-scrollbar">
+        <div class="flex justify-between items-center pb-2 border-b border-slate-800">
+          <h3 class="text-sm font-bold text-white"><i class="fa-solid fa-file-contract text-amber-400 mr-2"></i> Terms of Service</h3>
+          <button onclick="closeModal('modal-terms')" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark"></i></button>
         </div>
-      `).join('');
-    }
+        <div class="text-xs text-slate-300 space-y-2 leading-relaxed">
+          <p><strong>1. General Utility:</strong> SynthBudget provides budgeting, recurring subscription calculations, and savings trackers for personal estimation only.</p>
+          <p><strong>2. No Financial Advice:</strong> The app does not provide loan underwriting or certified financial advice.</p>
+          <p><strong>3. Backups:</strong> Users are responsible for exporting their data JSON backups prior to clearing device memory.</p>
+        </div>
+        <button onclick="closeModal('modal-terms')" class="w-full py-2.5 rounded-xl bg-indigo-600 text-white font-bold text-xs">Close</button>
+      </div>
+    </div>
 
-    function renderSavingsFull() {
-      const container = document.getElementById('savings-full-list');
-      container.innerHTML = state.goals.map(goal => {
-        const pct = Math.min(100, Math.round((goal.saved / goal.target) * 100));
-        return `
-          <div class="glass-card p-4 rounded-xl space-y-3 border border-slate-800">
-            <div class="flex justify-between items-center text-xs">
-              <span class="font-bold text-sm text-slate-100">${goal.title}</span>
-              <span class="font-extrabold text-emerald-400">$${Number(goal.saved).toFixed(2)} / $${Number(goal.target).toFixed(2)}</span>
-            </div>
-            <div class="w-full h-3 bg-slate-900 rounded-full overflow-hidden">
-              <div class="h-full bg-gradient-to-r ${goal.color} rounded-full" style="width: ${pct}%"></div>
-            </div>
-            <div class="flex justify-between items-center text-[11px] text-slate-400 pt-1">
-              <span>${pct}% Completed</span>
-              <button onclick="deleteGoal('${goal.id}')" class="text-rose-400 hover:underline">Remove</button>
-            </div>
-          </div>
-        `;
-      }).join('');
-    }
+    <!-- MODAL 7: LEAVE FEEDBACK -->
+    <div id="modal-feedback" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm hidden items-center justify-center p-4">
+      <div class="w-full max-w-md bg-[#151C28] border border-slate-800 rounded-2xl p-5 space-y-3">
+        <div class="flex justify-between items-center pb-2 border-b border-slate-800">
+          <h3 class="text-sm font-bold text-white"><i class="fa-solid fa-message text-emerald-400 mr-2"></i> Send Feedback</h3>
+          <button onclick="closeModal('modal-feedback')" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+        <p class="text-xs text-slate-400">Have suggestions or spotted a bug? Send your feedback directly to the Synth Labs development team.</p>
+        <textarea
 
-    function renderCategoriesBreakdown() {
-      const container = document.getElementById('categories-breakdown-list');
-      const catTotals = {};
 
-      state.transactions.forEach(tx => {
-        catTotals[tx.category] = (catTotals[tx.category] || 0) + Number(tx.amount);
-      });
-
-      container.innerHTML = state.categories.map(cat => {
-        const spent = catTotals[cat.name] || 0;
-        const pct = Math.min(100, Math.round((spent / cat.cap) * 100));
-        return `
-          <div class="glass-card p-3.5 rounded-xl space-y-2 border border-slate-800">
-            <div class="flex justify-between items-center text-xs">
-              <span class="font-bold text-slate-200 flex items-center gap-2">
-                <i class="fa-solid ${cat.icon} text-purple-400"></i> ${cat.name}
-              </span>
-              <span class="font-semibold text-slate-300">$${spent.toFixed(2)} / $${cat.cap}</span>
-            </div>
-            <div class="w-full h-2 bg-slate-900 rounded-full overflow-hidden">
-              <div class="h-full ${cat.color} rounded-full" style="width: ${pct}%"></div>
-            </div>
-          </div>
-        `;
-      }).join('');
-    }
-
-    function deleteSubscription(id) {
-      state.subscriptions = state.subscriptions.filter(s => s.id !== id);
-      saveState();
-      renderSubscriptionsFull();
-      showToast('Subscription deleted');
-    }
-
-    function deleteGoal(id) {
-      state.goals = state.goals.filter(g => g.id !== id);
-      saveState();
-      renderSavingsFull();
-      showToast('Savings goal deleted');
-    }
-
-    function exportData() {
-      const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(state, null, 2));
-      const downloadAnchor = document.createElement('a');
-      downloadAnchor.setAttribute("href", dataStr);
-      downloadAnchor.setAttribute("download", `synthbudget_backup_${new Date().toISOString().slice(0,10)}.json`);
-      document.body.appendChild(downloadAnchor);
-      downloadAnchor.click();
-      downloadAnchor.remove();
-      showToast('Backup downloaded successfully!');
-    }
-
-    function importData(event) {
-      const file = event.target.files[0];
-      if (!file) return;
-
-      const reader = new FileReader();
-      reader.onload = function(e) {
-        try {
-          const importedState = JSON.parse(e.target.result);
-          if (importedState.subscriptions && importedState.transactions) {
-            state = importedState;
-            saveState();
-            showToast('Data restored successfully!');
-          } else {
-            showToast('Invalid backup file', 'fa-triangle-exclamation', 'text-amber-400');
-          }
-        } catch (err) {
-          showToast('Failed to parse file', 'fa-triangle-exclamation', 'text-amber-400');
-        }
-      };
-      reader.readAsText(file);
-    }
-
-    function showToast(msg, icon = 'fa-circle-check', iconColor = 'text-emerald-400') {
-      const toast = document.getElementById('toast');
-      document.getElementById('toast-message').innerText = msg;
-      const toastIcon = document.getElementById('toast-icon');
-      toastIcon.className = `fa-solid ${icon} ${iconColor} text-sm`;
-
-      toast.classList.remove('opacity-0', '-translate-y-4');
-      toast.classList.add('opacity-100', 'translate-y-0');
-
-      setTimeout(() => {
-        toast.classList.remove('opacity-100', 'translate-y-0');
-        toast.classList.add('opacity-0', '-translate-y-4');
-      }, 2500);
-    }
-  </script>
-</body>
-</html>
