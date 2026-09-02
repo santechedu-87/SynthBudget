@@ -94,17 +94,21 @@ jobs:
 
       - name: Configure Target SDK 36, Version 10002 & AdMob
         run: |
+          # Bump Version Code to 10002 and Version Name to 1.1.0
           sed -i 's/versionCode 10001/versionCode 10002/g' android/app/build.gradle
           sed -i 's/versionCode 1/versionCode 10002/g' android/app/build.gradle
           sed -i 's/versionName "1.0"/versionName "1.1.0"/g' android/app/build.gradle
           
-          if [ -f android/variables.gradle ]; then
-            sed -i 's/compileSdkVersion = [0-9]*/compileSdkVersion = 36/g' android/variables.gradle
-            sed -i 's/targetSdkVersion = [0-9]*/targetSdkVersion = 36/g' android/variables.gradle
-          fi
+          # Directly write SDK numbers to avoid rootProject null errors
+          sed -i 's/compileSdkVersion rootProject.ext.compileSdkVersion/compileSdkVersion 36/g' android/app/build.gradle
+          sed -i 's/targetSdkVersion rootProject.ext.targetSdkVersion/targetSdkVersion 36/g' android/app/build.gradle
+          sed -i 's/minSdkVersion rootProject.ext.minSdkVersion/minSdkVersion 22/g' android/app/build.gradle
+          
+          # Fallback sed patterns just in case
           sed -i 's/targetSdkVersion [0-9]*/targetSdkVersion 36/g' android/app/build.gradle
           sed -i 's/compileSdkVersion [0-9]*/compileSdkVersion 36/g' android/app/build.gradle
           
+          # Inject AdMob App ID
           sed -i '/<\/application>/i <meta-data android:name="com.google.android.gms.ads.APPLICATION_ID" android:value="ca-app-pub-1977225319753961~6485522419"/>' android/app/src/main/AndroidManifest.xml
           
           npx cap sync android
