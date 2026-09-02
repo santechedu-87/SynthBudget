@@ -28,6 +28,13 @@ jobs:
         with:
           node-version: 20
 
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Install Android SDK Platforms
+        run: |
+          echo "y" | sdkmanager "platforms;android-36" "build-tools;36.0.0"
+
       - name: Install Dependencies & Setup Capacitor
         run: |
           npm init -y
@@ -67,21 +74,18 @@ jobs:
 
           rsvg-convert -w 512 -h 512 app_icon.svg -o icon_512.png
           
-          # Overwrite legacy mipmap PNGs
           convert icon_512.png -resize 48x48 android/app/src/main/res/mipmap-mdpi/ic_launcher.png
           convert icon_512.png -resize 72x72 android/app/src/main/res/mipmap-hdpi/ic_launcher.png
           convert icon_512.png -resize 96x96 android/app/src/main/res/mipmap-xhdpi/ic_launcher.png
           convert icon_512.png -resize 144x144 android/app/src/main/res/mipmap-xxhdpi/ic_launcher.png
           convert icon_512.png -resize 192x192 android/app/src/main/res/mipmap-xxxhdpi/ic_launcher.png
 
-          # Overwrite round launcher variants
           cp android/app/src/main/res/mipmap-mdpi/ic_launcher.png android/app/src/main/res/mipmap-mdpi/ic_launcher_round.png
           cp android/app/src/main/res/mipmap-hdpi/ic_launcher.png android/app/src/main/res/mipmap-hdpi/ic_launcher_round.png
           cp android/app/src/main/res/mipmap-xhdpi/ic_launcher.png android/app/src/main/res/mipmap-xhdpi/ic_launcher_round.png
           cp android/app/src/main/res/mipmap-xxhdpi/ic_launcher.png android/app/src/main/res/mipmap-xxhdpi/ic_launcher_round.png
           cp android/app/src/main/res/mipmap-xxxhdpi/ic_launcher.png android/app/src/main/res/mipmap-xxxhdpi/ic_launcher_round.png
 
-          # Overwrite modern Android Adaptive Icon Foregrounds
           convert icon_512.png -resize 108x108 android/app/src/main/res/mipmap-mdpi/ic_launcher_foreground.png
           convert icon_512.png -resize 162x162 android/app/src/main/res/mipmap-hdpi/ic_launcher_foreground.png
           convert icon_512.png -resize 216x216 android/app/src/main/res/mipmap-xhdpi/ic_launcher_foreground.png
@@ -104,10 +108,7 @@ jobs:
           sed -i '/<\/application>/i <meta-data android:name="com.google.android.gms.ads.APPLICATION_ID" android:value="ca-app-pub-1977225319753961~6485522419"/>' android/app/src/main/AndroidManifest.xml
           
           npx cap sync android
-        - name: Install Android SDK Platform 36
-        run: |
-          echo "y" | ${ANDROID_HOME}/cmdline-tools/latest/bin/sdkmanager "platforms;android-36" || true
-          
+
       - name: Build Android Bundle & APK
         run: |
           cd android
