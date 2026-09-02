@@ -92,11 +92,12 @@ jobs:
           convert icon_512.png -resize 324x324 android/app/src/main/res/mipmap-xxhdpi/ic_launcher_foreground.png
           convert icon_512.png -resize 432x432 android/app/src/main/res/mipmap-xxxhdpi/ic_launcher_foreground.png
 
-      - name: Configure Target SDK 36, Version 10002 & AdMob
+      - name: Configure Target SDK 36, Version 10003 & AdMob
         run: |
-          # Bump Version Code to 10002 and Version Name to 1.1.0
-          sed -i 's/versionCode 10001/versionCode 10002/g' android/app/build.gradle
-          sed -i 's/versionCode 1/versionCode 10002/g' android/app/build.gradle
+          # Bump Version Code to 10003 and Version Name to 1.1.0
+          sed -i 's/versionCode 10002/versionCode 10003/g' android/app/build.gradle
+          sed -i 's/versionCode 10001/versionCode 10003/g' android/app/build.gradle
+          sed -i 's/versionCode 1/versionCode 10003/g' android/app/build.gradle
           sed -i 's/versionName "1.0"/versionName "1.1.0"/g' android/app/build.gradle
           
           # Directly write SDK numbers to avoid rootProject null errors
